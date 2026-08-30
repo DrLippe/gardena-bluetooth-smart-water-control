@@ -24,7 +24,21 @@ async def async_get_config_entry_diagnostics(
     coordinator = entry.runtime_data
     schedule_data: dict[str, dict[str, int | str]] = {}
 
-    for uuid in sorted(coordinator.characteristics):
+    try:
+        async with asyncio.timeout(READ_TIMEOUT):
+            characteristics = await coordinator.client.get_all_characteristics_uuid()
+    except TimeoutError:
+        return {
+            "schedule_characteristics": {},
+            "discovery_error": "timeout",
+        }
+    except (GardenaBluetoothException, DeviceUnavailable) as exception:
+        return {
+            "schedule_characteristics": {},
+            "discovery_error": type(exception).__name__,
+        }
+
+    for uuid in sorted(characteristics):
         if not uuid.startswith(SCHEDULE_UUID_PREFIX):
             continue
 
