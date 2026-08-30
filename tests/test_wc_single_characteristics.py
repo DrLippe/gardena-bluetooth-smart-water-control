@@ -32,7 +32,7 @@ def _load_vendored_library() -> None:
 
 _load_vendored_library()
 
-from gardena_bluetooth.const import Valve1, Valve2  # noqa: E402
+from gardena_bluetooth.const import Pump, Valve1, Valve2  # noqa: E402
 
 
 class ValveXCharacteristicTests(unittest.TestCase):
@@ -60,6 +60,18 @@ class ValveXCharacteristicTests(unittest.TestCase):
     def test_reset_error_has_empty_execute_payload(self) -> None:
         """A parameterless LwM2M Execute is represented by an empty payload."""
         self.assertEqual(Valve1.reset_error.encode({}), b"")
+
+    def test_water_diagnostic_characteristic_uuids(self) -> None:
+        """The optional pump telemetry block uses UUIDs 0101 through 0104."""
+        self.assertTrue(Pump.status.uuid.startswith("98bd0101"))
+        self.assertTrue(Pump.tank_preassure.uuid.startswith("98bd0102"))
+        self.assertTrue(Pump.flow_rate.uuid.startswith("98bd0103"))
+        self.assertTrue(Pump.ptu_mode.uuid.startswith("98bd0104"))
+
+    def test_water_diagnostic_uint16_decoding(self) -> None:
+        """Pressure and flow raw values are unsigned little-endian integers."""
+        self.assertEqual(Pump.tank_preassure.decode(bytes.fromhex("e803")), 1000)
+        self.assertEqual(Pump.flow_rate.decode(bytes.fromhex("1500")), 21)
 
 
 if __name__ == "__main__":

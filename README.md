@@ -26,6 +26,11 @@ home-assistant/discussions/3056).
 5. **Valve diagnostics** — Exposes the Valve1/Valve2 error code, a
    configurable `paused until` timestamp, and a button that resets the
    actuator error using the parameterless LWM2M Execute command.
+6. **Water diagnostics (experimental)** — Exposes the optional
+   `98bd0101`–`98bd0104` telemetry block as read-only status, pressure,
+   flow-rate raw value, and operating-mode entities. Pressure uses the
+   documented mbar representation; the remaining values stay unscaled until
+   verified on the G-19033.
 
 ## Status
 

@@ -22,6 +22,18 @@
       },
       "error_code_valve_2": {
         "name": "Fehlercode Ventil 2"
+      },
+      "pump_status_raw": {
+        "name": "Wassersystemstatus Rohwert"
+      },
+      "tank_pressure": {
+        "name": "Tankdruck"
+      },
+      "pump_flow_rate_raw": {
+        "name": "Wasserdurchfluss Rohwert"
+      },
+      "ptu_mode_raw": {
+        "name": "Wassersystemmodus Rohwert"
       }
     }
   }

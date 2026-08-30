@@ -22,6 +22,18 @@
       },
       "error_code_valve_2": {
         "default": "mdi:alert-circle-outline"
+      },
+      "pump_status_raw": {
+        "default": "mdi:pump"
+      },
+      "tank_pressure": {
+        "default": "mdi:gauge"
+      },
+      "pump_flow_rate_raw": {
+        "default": "mdi:waves-arrow-right"
+      },
+      "ptu_mode_raw": {
+        "default": "mdi:cog-outline"
       }
     },
     "text": {

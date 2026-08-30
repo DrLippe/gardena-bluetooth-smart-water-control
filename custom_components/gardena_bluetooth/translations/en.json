@@ -169,6 +169,18 @@
       "flow_statistics_resettable": {
         "name": "Flow since reset"
       },
+      "pump_status_raw": {
+        "name": "Water system status raw value"
+      },
+      "tank_pressure": {
+        "name": "Tank pressure"
+      },
+      "pump_flow_rate_raw": {
+        "name": "Water flow raw value"
+      },
+      "ptu_mode_raw": {
+        "name": "Water system mode raw value"
+      },
       "remaining_open_timestamp": {
         "name": "Valve closing"
       },
