@@ -40,6 +40,12 @@
       }
     },
     "text": {
+      "valve_name_1": {
+        "default": "mdi:form-textbox"
+      },
+      "valve_name_2": {
+        "default": "mdi:form-textbox"
+      },
       "contour_name": {
         "default": "mdi:vector-polygon"
       },

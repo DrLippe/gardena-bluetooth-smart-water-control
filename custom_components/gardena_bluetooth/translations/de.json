@@ -38,6 +38,14 @@
       "ptu_mode_raw": {
         "name": "Wassersystemmodus Rohwert"
       }
+    },
+    "text": {
+      "valve_name_1": {
+        "name": "Name Ventil 1"
+      },
+      "valve_name_2": {
+        "name": "Name Ventil 2"
+      }
     }
   }
 }

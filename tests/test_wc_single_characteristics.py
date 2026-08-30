@@ -47,13 +47,20 @@ class ValveXCharacteristicTests(unittest.TestCase):
         """Valve 1 uses the G-19033 actuator resource UUIDs."""
         self.assertTrue(Valve1.error.uuid.startswith("98bda003"))
         self.assertTrue(Valve1.paused_until.uuid.startswith("98bda004"))
+        self.assertTrue(Valve1.name.uuid.startswith("98bda005"))
         self.assertTrue(Valve1.reset_error.uuid.startswith("98bda022"))
 
     def test_valve2_diagnostic_characteristic_uuids(self) -> None:
         """Valve 2 follows the corresponding second-instance UUID layout."""
         self.assertTrue(Valve2.error.uuid.startswith("98bda103"))
         self.assertTrue(Valve2.paused_until.uuid.startswith("98bda104"))
+        self.assertTrue(Valve2.name.uuid.startswith("98bda105"))
         self.assertTrue(Valve2.reset_error.uuid.startswith("98bda122"))
+
+    def test_valve_name_utf8_round_trip(self) -> None:
+        """Actuator names preserve UTF-8 characters."""
+        value = "Garten Süd"
+        self.assertEqual(Valve1.name.decode(Valve1.name.encode(value)), value)
 
     def test_pause_timestamp_round_trip(self) -> None:
         """Pause timestamps use the eight-byte Gen-2 BLE encoding."""

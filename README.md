@@ -26,11 +26,12 @@ home-assistant/discussions/3056).
 5. **Valve diagnostics** — Exposes the Valve1/Valve2 error code, a
    configurable `paused until` timestamp, and a button that resets the
    actuator error using the parameterless LWM2M Execute command.
-6. **Water diagnostics (experimental)** — Exposes the optional
-   `98bd0101`–`98bd0104` telemetry block as read-only status, pressure,
-   flow-rate raw value, and operating-mode entities. Pressure uses the
-   documented mbar representation; the remaining values stay unscaled until
-   verified on the G-19033.
+6. **Valve names** — Exposes the Gen-2 actuator name as a writable text
+   entity (`98bda005` for valve 1 and `98bda105` for valve 2).
+7. **Device uptime** — Exposes `98bd0101` as uptime in seconds on Water
+   Control devices. Live testing confirmed that it resets to zero after a
+   power cycle. UUIDs `0102`–`0104` are deliberately not exposed for this
+   product family because their pump meanings do not apply to the G-19033.
 
 ## Status
 

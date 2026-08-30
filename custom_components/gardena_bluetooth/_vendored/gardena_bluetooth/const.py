@@ -82,6 +82,7 @@ class ValveX(Service, ABC):
     manual_watering_duration: ClassVar[CharacteristicLong]
     error: ClassVar[CharacteristicInt]
     paused_until: ClassVar[CharacteristicTime64]
+    name: ClassVar[CharacteristicNullStringUf8]
     state: ClassVar[CharacteristicBool]
     remaining_time_open: ClassVar[CharacteristicLong]
     activation_reason: ClassVar[CharacteristicIntEnum]
@@ -99,6 +100,7 @@ class Valve1(ValveX):
     available = CharacteristicBool("98bda002-0b0e-421a-84e5-ddbf75dc6de4", variant="1")
     error = CharacteristicInt("98bda003-0b0e-421a-84e5-ddbf75dc6de4")
     paused_until = CharacteristicTime64("98bda004-0b0e-421a-84e5-ddbf75dc6de4")
+    name = CharacteristicNullStringUf8("98bda005-0b0e-421a-84e5-ddbf75dc6de4")
     state = CharacteristicBool("98bda008-0b0e-421a-84e5-ddbf75dc6de4")
     remaining_time_open = CharacteristicLong("98bda010-0b0e-421a-84e5-ddbf75dc6de4")
     activation_reason = CharacteristicIntEnum(
@@ -118,6 +120,7 @@ class Valve2(ValveX):
     available = CharacteristicBool("98bda002-0b0e-421a-84e5-ddbf75dc6de4", variant="2")
     error = CharacteristicInt("98bda103-0b0e-421a-84e5-ddbf75dc6de4")
     paused_until = CharacteristicTime64("98bda104-0b0e-421a-84e5-ddbf75dc6de4")
+    name = CharacteristicNullStringUf8("98bda105-0b0e-421a-84e5-ddbf75dc6de4")
     state = CharacteristicBool("98bda108-0b0e-421a-84e5-ddbf75dc6de4")
     remaining_time_open = CharacteristicLong("98bda110-0b0e-421a-84e5-ddbf75dc6de4")
     activation_reason = CharacteristicIntEnum(

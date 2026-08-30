@@ -2,8 +2,13 @@
 
 from dataclasses import dataclass
 
-from gardena_bluetooth.const import AquaContourContours, AquaContourPosition
-from gardena_bluetooth.parse import CharacteristicNullString
+from gardena_bluetooth.const import (
+    AquaContourContours,
+    AquaContourPosition,
+    Valve1,
+    Valve2,
+)
+from gardena_bluetooth.parse import Characteristic
 
 from homeassistant.components.text import TextEntity, TextEntityDescription
 from homeassistant.const import EntityCategory
@@ -18,7 +23,7 @@ from .entity import GardenaBluetoothDescriptorEntity
 class GardenaBluetoothTextEntityDescription(TextEntityDescription):
     """Description of entity."""
 
-    char: CharacteristicNullString
+    char: Characteristic[str]
 
     @property
     def context(self) -> set[str]:
@@ -27,6 +32,20 @@ class GardenaBluetoothTextEntityDescription(TextEntityDescription):
 
 
 DESCRIPTIONS = (
+    GardenaBluetoothTextEntityDescription(
+        key=Valve1.name.unique_id,
+        translation_key="valve_name_1",
+        char=Valve1.name,
+        native_max=20,
+        entity_category=EntityCategory.CONFIG,
+    ),
+    GardenaBluetoothTextEntityDescription(
+        key=Valve2.name.unique_id,
+        translation_key="valve_name_2",
+        char=Valve2.name,
+        native_max=20,
+        entity_category=EntityCategory.CONFIG,
+    ),
     *(
         GardenaBluetoothTextEntityDescription(
             key=f"position_{i}_name",

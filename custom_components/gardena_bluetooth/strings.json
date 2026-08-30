@@ -232,6 +232,12 @@
       }
     },
     "text": {
+      "valve_name_1": {
+        "name": "Valve 1 name"
+      },
+      "valve_name_2": {
+        "name": "Valve 2 name"
+      },
       "contour_name": {
         "name": "Contour {number}"
       },
