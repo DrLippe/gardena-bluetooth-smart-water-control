@@ -16,8 +16,9 @@ from gardena_bluetooth.const import (
     Valve,
     Valve1,
     Valve2,
+    WaterComputerDiagnostics,
 )
-from gardena_bluetooth.parse import Characteristic
+from gardena_bluetooth.parse import Characteristic, ProductType
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -31,6 +32,7 @@ from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
     UnitOfPressure,
+    UnitOfTime,
     UnitOfVolume,
     UnitOfVolumeFlowRate,
 )
@@ -39,6 +41,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .coordinator import GardenaBluetoothConfigEntry, GardenaBluetoothCoordinator
+from .const import CONF_PRODUCT_TYPE
 from .entity import GardenaBluetoothDescriptorEntity, GardenaBluetoothEntity
 
 type SensorRawType = StateType | datetime
@@ -196,36 +199,6 @@ DESCRIPTIONS = (
         get=_get_timestamp,
     ),
     GardenaBluetoothSensorEntityDescription(
-        key=Pump.status.unique_id,
-        translation_key="pump_status_raw",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        char=Pump.status,
-    ),
-    GardenaBluetoothSensorEntityDescription(
-        key=Pump.tank_preassure.unique_id,
-        translation_key="tank_pressure",
-        state_class=SensorStateClass.MEASUREMENT,
-        device_class=SensorDeviceClass.PRESSURE,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        native_unit_of_measurement=UnitOfPressure.MBAR,
-        suggested_unit_of_measurement=UnitOfPressure.BAR,
-        suggested_display_precision=2,
-        char=Pump.tank_preassure,
-    ),
-    GardenaBluetoothSensorEntityDescription(
-        key=Pump.flow_rate.unique_id,
-        translation_key="pump_flow_rate_raw",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        char=Pump.flow_rate,
-    ),
-    GardenaBluetoothSensorEntityDescription(
-        key=Pump.ptu_mode.unique_id,
-        translation_key="ptu_mode_raw",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        char=Pump.ptu_mode,
-    ),
-    GardenaBluetoothSensorEntityDescription(
         key=Spray.current_distance.unique_id,
         translation_key="spray_current_distance",
         state_class=SensorStateClass.MEASUREMENT,
@@ -265,6 +238,50 @@ DESCRIPTIONS = (
     ),
 )
 
+PUMP_DESCRIPTIONS = (
+    GardenaBluetoothSensorEntityDescription(
+        key=Pump.status.unique_id,
+        translation_key="pump_status_raw",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        char=Pump.status,
+    ),
+    GardenaBluetoothSensorEntityDescription(
+        key=Pump.tank_preassure.unique_id,
+        translation_key="tank_pressure",
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=SensorDeviceClass.PRESSURE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        native_unit_of_measurement=UnitOfPressure.MBAR,
+        suggested_unit_of_measurement=UnitOfPressure.BAR,
+        suggested_display_precision=2,
+        char=Pump.tank_preassure,
+    ),
+    GardenaBluetoothSensorEntityDescription(
+        key=Pump.flow_rate.unique_id,
+        translation_key="pump_flow_rate_raw",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        char=Pump.flow_rate,
+    ),
+    GardenaBluetoothSensorEntityDescription(
+        key=Pump.ptu_mode.unique_id,
+        translation_key="ptu_mode_raw",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        char=Pump.ptu_mode,
+    ),
+)
+
+WATER_COMPUTER_DIAGNOSTIC_DESCRIPTIONS = (
+    GardenaBluetoothSensorEntityDescription(
+        key=WaterComputerDiagnostics.uptime.unique_id,
+        translation_key="device_uptime",
+        device_class=SensorDeviceClass.DURATION,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        char=WaterComputerDiagnostics.uptime,
+    ),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -273,9 +290,24 @@ async def async_setup_entry(
 ) -> None:
     """Set up Gardena Bluetooth sensor based on a config entry."""
     coordinator = entry.runtime_data
+    try:
+        product_type = ProductType[entry.data.get(CONF_PRODUCT_TYPE, "UNKNOWN")]
+    except KeyError:
+        product_type = ProductType.UNKNOWN
+
+    descriptions = DESCRIPTIONS
+    if product_type == ProductType.WATER_COMPUTER:
+        descriptions += WATER_COMPUTER_DIAGNOSTIC_DESCRIPTIONS
+    elif product_type in {
+        ProductType.PUMP,
+        ProductType.PRESSURE_TANKS,
+        ProductType.AUTOMATS,
+    }:
+        descriptions += PUMP_DESCRIPTIONS
+
     entities: list[GardenaBluetoothEntity] = [
         GardenaBluetoothSensor(coordinator, description, description.context)
-        for description in DESCRIPTIONS
+        for description in descriptions
         if description.char.unique_id in coordinator.characteristics
     ]
     if Valve.remaining_open_time.unique_id in coordinator.characteristics:

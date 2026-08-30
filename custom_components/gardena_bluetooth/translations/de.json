@@ -23,6 +23,9 @@
       "error_code_valve_2": {
         "name": "Fehlercode Ventil 2"
       },
+      "device_uptime": {
+        "name": "Gerätelaufzeit"
+      },
       "pump_status_raw": {
         "name": "Wassersystemstatus Rohwert"
       },

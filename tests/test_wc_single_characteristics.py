@@ -32,7 +32,12 @@ def _load_vendored_library() -> None:
 
 _load_vendored_library()
 
-from gardena_bluetooth.const import Pump, Valve1, Valve2  # noqa: E402
+from gardena_bluetooth.const import (  # noqa: E402
+    Pump,
+    Valve1,
+    Valve2,
+    WaterComputerDiagnostics,
+)
 
 
 class ValveXCharacteristicTests(unittest.TestCase):
@@ -67,6 +72,13 @@ class ValveXCharacteristicTests(unittest.TestCase):
         self.assertTrue(Pump.tank_preassure.uuid.startswith("98bd0102"))
         self.assertTrue(Pump.flow_rate.uuid.startswith("98bd0103"))
         self.assertTrue(Pump.ptu_mode.uuid.startswith("98bd0104"))
+
+    def test_water_computer_uptime_characteristic(self) -> None:
+        """The G-19033 0101 value is a four-byte uptime in seconds."""
+        self.assertTrue(WaterComputerDiagnostics.uptime.uuid.startswith("98bd0101"))
+        encoded = WaterComputerDiagnostics.uptime.encode(73)
+        self.assertEqual(encoded, bytes.fromhex("49000000"))
+        self.assertEqual(WaterComputerDiagnostics.uptime.decode(encoded), 73)
 
     def test_water_diagnostic_uint16_decoding(self) -> None:
         """Pressure and flow raw values are unsigned little-endian integers."""

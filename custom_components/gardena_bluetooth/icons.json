@@ -23,6 +23,9 @@
       "error_code_valve_2": {
         "default": "mdi:alert-circle-outline"
       },
+      "device_uptime": {
+        "default": "mdi:timer-outline"
+      },
       "pump_status_raw": {
         "default": "mdi:pump"
       },

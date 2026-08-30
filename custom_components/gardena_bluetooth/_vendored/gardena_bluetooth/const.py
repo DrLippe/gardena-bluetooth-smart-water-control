@@ -346,6 +346,17 @@ class Pump(Service):
     total_motor_runtime = CharacteristicLong("98bd0111-0b0e-421a-84e5-ddbf75dc6de4")
 
 
+class WaterComputerDiagnostics:
+    """G-1903x diagnostics sharing UUIDs with the pump service.
+
+    The 0100 block is also present on Smart Water Control devices, but its
+    values do not have the pump semantics above. On a G-19033, 0101 resets
+    after a power cycle and then advances once per second.
+    """
+
+    uptime = CharacteristicLong("98bd0101-0b0e-421a-84e5-ddbf75dc6de4")
+
+
 class Spray(Service):
     uuid = "98bd0110-0b0e-421a-84e5-ddbf75dc6de4"
     variant = "1"

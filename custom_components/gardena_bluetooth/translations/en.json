@@ -169,6 +169,9 @@
       "flow_statistics_resettable": {
         "name": "Flow since reset"
       },
+      "device_uptime": {
+        "name": "Device uptime"
+      },
       "pump_status_raw": {
         "name": "Water system status raw value"
       },
