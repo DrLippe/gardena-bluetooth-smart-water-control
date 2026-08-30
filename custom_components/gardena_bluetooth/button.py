@@ -34,13 +34,18 @@ SCHEDULE_3_START_UUID = SCHEDULE_3_UUIDS[1]
 SCHEDULE_3_END_UUID = SCHEDULE_3_UUIDS[3]
 SCHEDULE_3_START_REFERENCE_UUID = SCHEDULE_3_UUIDS[0]
 SCHEDULE_3_END_REFERENCE_UUID = SCHEDULE_3_UUIDS[2]
-SCHEDULE_3_REPETITION_UUID = SCHEDULE_3_UUIDS[4]
+SCHEDULE_3_REPETITION_TYPE_UUID = SCHEDULE_3_UUIDS[4]
+SCHEDULE_3_REPETITION_VALUE_UUID = SCHEDULE_3_UUIDS[5]
 TEST_START_SECONDS = 6 * 3600 + 17 * 60
 TEST_END_SECONDS = TEST_START_SECONDS + 13 * 60
 FULL_TEST_START_OFFSET = 17 * 60
 FULL_TEST_END_OFFSET = 30 * 60
 FULL_TEST_REFERENCE = 1
-FULL_TEST_REPETITION = 0x02
+FULL_TEST_REPETITION_TYPE = 0x02
+# Gen-1 schedules use bit 1 for Monday. The Gen-2 value is intentionally
+# limited to this single bit until the shared weekday representation is
+# confirmed on the G-19033.
+FULL_TEST_REPETITION_VALUE = 0x02
 
 
 @dataclass(frozen=True)
@@ -252,7 +257,8 @@ class GardenaBluetoothScheduleFullWriteTestButton(
                 "Schedule slot 3 is no longer empty; refusing to modify it"
             )
 
-        # Insertion order is safety-relevant: recurrence is written last.
+        # Insertion order is safety-relevant: the repetition value activates
+        # the schedule and is therefore written last.
         test_values = {
             SCHEDULE_3_START_REFERENCE_UUID: FULL_TEST_REFERENCE.to_bytes(1, "little"),
             SCHEDULE_3_START_UUID: FULL_TEST_START_OFFSET.to_bytes(
@@ -262,7 +268,12 @@ class GardenaBluetoothScheduleFullWriteTestButton(
             SCHEDULE_3_END_UUID: FULL_TEST_END_OFFSET.to_bytes(
                 4, "little", signed=True
             ),
-            SCHEDULE_3_REPETITION_UUID: FULL_TEST_REPETITION.to_bytes(1, "little"),
+            SCHEDULE_3_REPETITION_TYPE_UUID: FULL_TEST_REPETITION_TYPE.to_bytes(
+                1, "little"
+            ),
+            SCHEDULE_3_REPETITION_VALUE_UUID: FULL_TEST_REPETITION_VALUE.to_bytes(
+                4, "little"
+            ),
         }
         written: dict[str, str] = {}
         active_snapshot: dict[str, str] = {}
@@ -301,9 +312,10 @@ class GardenaBluetoothScheduleFullWriteTestButton(
             result["error"] = type(exception).__name__
         finally:
             restore_errors: list[str] = []
-            # Disable recurrence first, before restoring any timing fields.
+            # Disable recurrence first, before restoring its type or timing.
             restore_order = (
-                SCHEDULE_3_REPETITION_UUID,
+                SCHEDULE_3_REPETITION_VALUE_UUID,
+                SCHEDULE_3_REPETITION_TYPE_UUID,
                 SCHEDULE_3_START_REFERENCE_UUID,
                 SCHEDULE_3_START_UUID,
                 SCHEDULE_3_END_REFERENCE_UUID,

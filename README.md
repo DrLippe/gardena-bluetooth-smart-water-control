@@ -40,8 +40,9 @@ home-assistant/discussions/3056).
    the start/end offsets, verifies both values, and restores the original bytes
    in a `finally` block. It never changes recurrence or actuator assignment.
 10. **Guarded full schedule test** — A second disabled-by-default diagnostic
-    temporarily writes sunrise-relative offsets and a one-day repetition mask.
-    Recurrence is written last, cleared first during cleanup, and a full before,
+    temporarily writes sunrise-relative offsets, the accepted Gen-2 repetition
+    type, and one weekday bit in the four-byte repetition value. The repetition
+    value is written last, cleared first during cleanup, and a full before,
     active, and restored snapshot is included in downloaded diagnostics.
 
 ## Status
