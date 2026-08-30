@@ -47,12 +47,6 @@
       },
       "reset_error_valve_2": {
         "name": "Reset valve 2 error"
-      },
-      "test_schedule_write": {
-        "name": "Test schedule write"
-      },
-      "test_full_schedule_write": {
-        "name": "Test complete schedule write"
       }
     },
     "datetime": {
@@ -178,6 +172,14 @@
       "device_uptime": {
         "name": "Device uptime"
       },
+      "watering_schedule": {
+        "name": "Watering schedule {slot}",
+        "state": {
+          "active": "Active",
+          "disabled": "Disabled",
+          "unsupported": "Unsupported format"
+        }
+      },
       "pump_status_raw": {
         "name": "Water system status raw value"
       },
@@ -249,6 +251,66 @@
       },
       "position_name": {
         "name": "Position {number}"
+      }
+    }
+  },
+  "exceptions": {
+    "schedule_end_not_after_start": {
+      "message": "The schedule end time must be after its start time."
+    }
+  },
+  "selector": {
+    "weekday": {
+      "options": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      }
+    }
+  },
+  "services": {
+    "set_schedule": {
+      "name": "Set watering schedule",
+      "description": "Atomically configure and enable a fixed-time weekly watering schedule.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Device",
+          "description": "The Gardena Bluetooth device that stores the schedule."
+        },
+        "slot": {
+          "name": "Schedule slot",
+          "description": "The schedule slot to configure, from 1 to 3."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "The local time at which watering starts."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "The local time at which watering stops."
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "The weekdays on which this schedule runs."
+        }
+      }
+    },
+    "clear_schedule": {
+      "name": "Clear watering schedule",
+      "description": "Safely disable and clear one watering schedule slot.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Device",
+          "description": "The Gardena Bluetooth device that stores the schedule."
+        },
+        "slot": {
+          "name": "Schedule slot",
+          "description": "The schedule slot to disable and clear, from 1 to 3."
+        }
       }
     }
   }

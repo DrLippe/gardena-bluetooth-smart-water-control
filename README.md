@@ -32,18 +32,27 @@ home-assistant/discussions/3056).
    Control devices. Live testing confirmed that it resets to zero after a
    power cycle. UUIDs `0102`–`0104` are deliberately not exposed for this
    product family because their pump meanings do not apply to the G-19033.
-8. **Schedule diagnostics** — The integration diagnostics read the Gen-2
-   `98bdd...` schedule blocks on demand and report their byte length and hex
-   value. They never write schedule data and omit device identifiers.
-9. **Guarded schedule write test** — An experimental diagnostic button checks
-   that valve 1 is paused and schedule slot 3 is completely empty, writes only
-   the start/end offsets, verifies both values, and restores the original bytes
-   in a `finally` block. It never changes recurrence or actuator assignment.
-10. **Guarded full schedule test** — A second disabled-by-default diagnostic
-    temporarily writes sunrise-relative offsets, the accepted Gen-2 repetition
-    type, and one weekday bit in the four-byte repetition value. The repetition
-    value is written last, cleared first during cleanup, and a full before,
-    active, and restored snapshot is included in downloaded diagnostics.
+8. **Watering schedules** — Exposes all three Gen-2 schedule slots as sensors
+   and adds `gardena_bluetooth.set_schedule` and
+   `gardena_bluetooth.clear_schedule` actions. Fixed local start/end times and
+   arbitrary weekday combinations are supported. Updates are transactional:
+   recurrence is disabled first, enabled last, verified after every write, and
+   the previous snapshot is restored after a failure.
+9. **Schedule diagnostics** — The integration diagnostics still read the raw
+   Gen-2 `98bdd...` blocks on demand for troubleshooting. Schedule masks are
+   monitored every five minutes; full slot data is read only for active slots
+   to keep BLE traffic and battery use low.
+
+## Watering schedule actions
+
+Use **Developer Tools → Actions** or an automation to call
+`gardena_bluetooth.set_schedule`. Select the Gardena config entry, a slot from
+1 to 3, start/end time, and one or more weekdays. Calling
+`gardena_bluetooth.clear_schedule` disables and clears the selected slot.
+
+Schedules spanning midnight are intentionally rejected. Split them into two
+slots instead. The device's actuator assignment and internal `pre_offset`
+metadata are never overwritten.
 
 ## Status
 
@@ -58,7 +67,7 @@ changes.
 ## Install via HACS
 
 This repo is already structured for HACS: **HACS → Integrations → ⋮ →
-Custom repositories → add `maxritter/gardena-bluetooth-smart-water-control`
+Custom repositories → add `DrLippe/gardena-bluetooth-smart-water-control`
 (category: Integration) → Install → Restart Home Assistant.**
 
 Then **Settings → Devices & Services → Add Integration → Gardena Bluetooth**,

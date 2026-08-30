@@ -19,6 +19,7 @@ from gardena_bluetooth.const import (
     WaterComputerDiagnostics,
 )
 from gardena_bluetooth.parse import Characteristic, ProductType
+from gardena_bluetooth.schedule import SCHEDULES, decode_schedule
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -310,6 +311,12 @@ async def async_setup_entry(
         for description in descriptions
         if description.char.unique_id in coordinator.characteristics
     ]
+    if product_type == ProductType.WATER_COMPUTER:
+        entities.extend(
+            GardenaBluetoothScheduleSensor(coordinator, schedule)
+            for schedule in SCHEDULES
+            if set(schedule.uuids).issubset(coordinator.raw_characteristics)
+        )
     if Valve.remaining_open_time.unique_id in coordinator.characteristics:
         entities.append(
             GardenaBluetoothRemainSensor(
@@ -361,6 +368,68 @@ class GardenaBluetoothSensor(GardenaBluetoothDescriptorEntity, SensorEntity):
         else:
             self._attr_available = True
 
+        super()._handle_coordinator_update()
+
+
+class GardenaBluetoothScheduleSensor(GardenaBluetoothEntity, SensorEntity):
+    """Representation of one Gen-2 watering schedule."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["disabled", "active", "unsupported"]
+
+    def __init__(self, coordinator, schedule) -> None:
+        """Initialize the schedule sensor."""
+        super().__init__(coordinator, {schedule.repetition_value})
+        self._schedule = schedule
+        self._attr_unique_id = (
+            f"{coordinator.address}-watering-schedule-{schedule.slot}"
+        )
+        self._attr_translation_key = "watering_schedule"
+        self._attr_translation_placeholders = {"slot": str(schedule.slot)}
+
+    def _handle_coordinator_update(self) -> None:
+        mask = self.coordinator.data.get(self._schedule.repetition_value)
+        if mask is None:
+            self._attr_available = False
+            self._attr_native_value = None
+            self._attr_extra_state_attributes = None
+            super()._handle_coordinator_update()
+            return
+
+        repetition_value = int.from_bytes(mask, "little")
+        if repetition_value == 0:
+            self._attr_available = True
+            self._attr_native_value = "disabled"
+            self._attr_extra_state_attributes = {"slot": self._schedule.slot}
+            super()._handle_coordinator_update()
+            return
+
+        try:
+            schedule = decode_schedule(self._schedule, self.coordinator.data)
+        except ValueError:
+            self._attr_available = False
+            self._attr_native_value = None
+            self._attr_extra_state_attributes = None
+            super()._handle_coordinator_update()
+            return
+
+        self._attr_available = True
+        self._attr_native_value = "active" if schedule.supported else "unsupported"
+        self._attr_extra_state_attributes = {
+            "slot": self._schedule.slot,
+            "start_time": (
+                schedule.start_time.isoformat() if schedule.start_time else None
+            ),
+            "end_time": schedule.end_time.isoformat() if schedule.end_time else None,
+            "weekdays": list(schedule.weekdays),
+            "start_reference": schedule.start_reference,
+            "start_offset": schedule.start_offset,
+            "end_reference": schedule.end_reference,
+            "end_offset": schedule.end_offset,
+            "repetition_type": schedule.repetition_type,
+            "repetition_value": schedule.repetition_value,
+            "actuator": schedule.actuator,
+        }
         super()._handle_coordinator_update()
 
 

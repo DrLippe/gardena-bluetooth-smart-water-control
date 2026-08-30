@@ -6,12 +6,6 @@
       },
       "reset_error_valve_2": {
         "name": "Ventilfehler 2 zurücksetzen"
-      },
-      "test_schedule_write": {
-        "name": "Zeitplan-Schreibtest"
-      },
-      "test_full_schedule_write": {
-        "name": "Vollständiger Zeitplan-Schreibtest"
       }
     },
     "datetime": {
@@ -32,6 +26,14 @@
       "device_uptime": {
         "name": "Gerätelaufzeit"
       },
+      "watering_schedule": {
+        "name": "Bewässerungszeitplan {slot}",
+        "state": {
+          "active": "Aktiv",
+          "disabled": "Deaktiviert",
+          "unsupported": "Nicht unterstütztes Format"
+        }
+      },
       "pump_status_raw": {
         "name": "Wassersystemstatus Rohwert"
       },
@@ -51,6 +53,66 @@
       },
       "valve_name_2": {
         "name": "Name Ventil 2"
+      }
+    }
+  },
+  "exceptions": {
+    "schedule_end_not_after_start": {
+      "message": "Die Endzeit des Zeitplans muss nach der Startzeit liegen."
+    }
+  },
+  "selector": {
+    "weekday": {
+      "options": {
+        "monday": "Montag",
+        "tuesday": "Dienstag",
+        "wednesday": "Mittwoch",
+        "thursday": "Donnerstag",
+        "friday": "Freitag",
+        "saturday": "Samstag",
+        "sunday": "Sonntag"
+      }
+    }
+  },
+  "services": {
+    "set_schedule": {
+      "name": "Bewässerungszeitplan setzen",
+      "description": "Konfiguriert und aktiviert einen wöchentlichen Bewässerungszeitplan atomar.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Gerät",
+          "description": "Das Gardena-Bluetooth-Gerät, auf dem der Zeitplan gespeichert wird."
+        },
+        "slot": {
+          "name": "Zeitplan-Slot",
+          "description": "Der zu konfigurierende Zeitplan-Slot von 1 bis 3."
+        },
+        "start_time": {
+          "name": "Startzeit",
+          "description": "Die lokale Uhrzeit, zu der die Bewässerung beginnt."
+        },
+        "end_time": {
+          "name": "Endzeit",
+          "description": "Die lokale Uhrzeit, zu der die Bewässerung endet."
+        },
+        "weekdays": {
+          "name": "Wochentage",
+          "description": "Die Wochentage, an denen dieser Zeitplan ausgeführt wird."
+        }
+      }
+    },
+    "clear_schedule": {
+      "name": "Bewässerungszeitplan löschen",
+      "description": "Deaktiviert und löscht einen Bewässerungszeitplan sicher.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Gerät",
+          "description": "Das Gardena-Bluetooth-Gerät, auf dem der Zeitplan gespeichert ist."
+        },
+        "slot": {
+          "name": "Zeitplan-Slot",
+          "description": "Der zu deaktivierende und zu löschende Zeitplan-Slot von 1 bis 3."
+        }
       }
     }
   }

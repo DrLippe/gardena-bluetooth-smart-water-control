@@ -24,19 +24,7 @@ async def async_get_config_entry_diagnostics(
     coordinator = entry.runtime_data
     schedule_data: dict[str, dict[str, int | str]] = {}
 
-    try:
-        async with asyncio.timeout(READ_TIMEOUT):
-            characteristics = await coordinator.client.get_all_characteristics_uuid()
-    except TimeoutError:
-        return {
-            "schedule_characteristics": {},
-            "discovery_error": "timeout",
-        }
-    except (GardenaBluetoothException, DeviceUnavailable) as exception:
-        return {
-            "schedule_characteristics": {},
-            "discovery_error": type(exception).__name__,
-        }
+    characteristics = coordinator.raw_characteristics
 
     for uuid in sorted(characteristics):
         if not uuid.startswith(SCHEDULE_UUID_PREFIX):
@@ -45,7 +33,8 @@ async def async_get_config_entry_diagnostics(
         short_uuid = uuid.split("-", 1)[0]
         try:
             async with asyncio.timeout(READ_TIMEOUT):
-                value = await coordinator.client.read_char_raw(uuid)
+                async with coordinator.operation_lock:
+                    value = await coordinator.client.read_char_raw(uuid)
         except CharacteristicNoAccess:
             schedule_data[short_uuid] = {"error": "not_readable"}
         except TimeoutError:
@@ -60,8 +49,4 @@ async def async_get_config_entry_diagnostics(
                 "hex": value.hex(),
             }
 
-    return {
-        "schedule_characteristics": schedule_data,
-        "schedule_write_test": coordinator.schedule_write_test_result,
-        "schedule_full_write_test": coordinator.schedule_full_write_test_result,
-    }
+    return {"schedule_characteristics": schedule_data}

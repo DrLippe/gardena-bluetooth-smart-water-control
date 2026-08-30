@@ -1,0 +1,53 @@
+set_schedule:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: gardena_bluetooth
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 3
+          step: 1
+          mode: box
+    start_time:
+      required: true
+      selector:
+        time:
+    end_time:
+      required: true
+      selector:
+        time:
+    weekdays:
+      required: true
+      selector:
+        select:
+          translation_key: weekday
+          multiple: true
+          options:
+            - monday
+            - tuesday
+            - wednesday
+            - thursday
+            - friday
+            - saturday
+            - sunday
+
+clear_schedule:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: gardena_bluetooth
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 3
+          step: 1
+          mode: box

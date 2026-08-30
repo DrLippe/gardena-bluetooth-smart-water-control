@@ -6,12 +6,6 @@
       },
       "reset_error_valve_2": {
         "default": "mdi:alert-circle-check-outline"
-      },
-      "test_schedule_write": {
-        "default": "mdi:test-tube"
-      },
-      "test_full_schedule_write": {
-        "default": "mdi:calendar-clock-outline"
       }
     },
     "datetime": {
@@ -31,6 +25,9 @@
       },
       "device_uptime": {
         "default": "mdi:timer-outline"
+      },
+      "watering_schedule": {
+        "default": "mdi:calendar-clock-outline"
       },
       "pump_status_raw": {
         "default": "mdi:pump"

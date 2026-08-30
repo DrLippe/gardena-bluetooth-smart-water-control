@@ -35,8 +35,10 @@ from homeassistant.components import bluetooth
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
 from .const import CONF_PRODUCT_TYPE, DOMAIN
@@ -45,6 +47,9 @@ from .coordinator import (
     GardenaBluetoothConfigEntry,
     GardenaBluetoothCoordinator,
 )
+from .services import async_setup_services
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -69,6 +74,13 @@ DISCONNECT_DELAY = 90
 # One connect timeout must not fail a whole poll cycle; the garden device
 # regularly misses the first connection attempt.
 CONNECT_ATTEMPTS = 4
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up Gardena Bluetooth integration services."""
+    del config
+    await async_setup_services(hass)
+    return True
 
 
 def get_connection(hass: HomeAssistant, address: str) -> CachedConnection:
@@ -132,6 +144,7 @@ async def async_setup_entry(
     client = Client(get_connection(hass, address), product_type)
     try:
         chars = await client.get_all_characteristics()
+        raw_chars = await client.get_all_characteristics_uuid()
 
         sw_version = await client.read_char(DeviceInformation.firmware_version, None)
         manufacturer = await client.read_char(DeviceInformation.manufacturer_name, None)
@@ -160,7 +173,14 @@ async def async_setup_entry(
     )
 
     coordinator = GardenaBluetoothCoordinator(
-        hass, entry, LOGGER, client, set(chars.keys()), device, address
+        hass,
+        entry,
+        LOGGER,
+        client,
+        set(chars.keys()),
+        set(raw_chars),
+        device,
+        address,
     )
 
     entry.runtime_data = coordinator

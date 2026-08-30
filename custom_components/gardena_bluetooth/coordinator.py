@@ -3,6 +3,7 @@
 import asyncio
 from datetime import timedelta
 import logging
+from time import monotonic
 
 from gardena_bluetooth.client import Client
 from gardena_bluetooth.exceptions import (
@@ -10,6 +11,7 @@ from gardena_bluetooth.exceptions import (
     GardenaBluetoothException,
 )
 from gardena_bluetooth.parse import Characteristic, CharacteristicType
+from gardena_bluetooth.schedule import SCHEDULE_MASK_UUIDS, SCHEDULE_UUIDS, SCHEDULES
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -24,6 +26,7 @@ SCAN_INTERVAL = timedelta(seconds=20)
 # Consecutive failed polls tolerated (serving cached data) before entities
 # are marked unavailable. 3 polls = ~60s bridge over transient proxy wedges.
 MAX_FAILED_POLLS = 3
+SCHEDULE_POLL_INTERVAL = 5 * 60
 LOGGER = logging.getLogger(__name__)
 
 type GardenaBluetoothConfigEntry = ConfigEntry[GardenaBluetoothCoordinator]
@@ -45,6 +48,7 @@ class GardenaBluetoothCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         logger: logging.Logger,
         client: Client,
         characteristics: set[str],
+        raw_characteristics: set[str],
         device_info: DeviceInfo,
         address: str,
     ) -> None:
@@ -61,9 +65,10 @@ class GardenaBluetoothCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         self._failed_polls = 0
         self.client = client
         self.characteristics = characteristics
+        self.raw_characteristics = raw_characteristics
         self.device_info = device_info
-        self.schedule_write_test_result: dict[str, object] | None = None
-        self.schedule_full_write_test_result: dict[str, object] | None = None
+        self.operation_lock = asyncio.Lock()
+        self._last_schedule_poll = 0.0
 
     async def async_shutdown(self) -> None:
         """Shutdown coordinator and any connection.
@@ -77,7 +82,8 @@ class GardenaBluetoothCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         await super().async_shutdown()
         try:
             async with asyncio.timeout(10):
-                await self.client.disconnect()
+                async with self.operation_lock:
+                    await self.client.disconnect()
         except (TimeoutError, GardenaBluetoothException) as exception:
             LOGGER.warning(
                 "Disconnect of %s timed out or failed during shutdown; "
@@ -94,32 +100,69 @@ class GardenaBluetoothCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         if not uuids:
             return {}
 
-        data: dict[str, bytes] = {}
-        for uuid in uuids:
+        schedule_masks = uuids & SCHEDULE_MASK_UUIDS
+        regular_uuids = uuids - SCHEDULE_UUIDS
+        data: dict[str, bytes] = {
+            uuid: value
+            for uuid, value in self.data.items()
+            if uuid in SCHEDULE_UUIDS
+        }
+        current_uuid = "unknown"
+
+        async def _read(uuid: str) -> bytes | None:
             try:
-                data[uuid] = await self.client.read_char_raw(uuid)
+                return await self.client.read_char_raw(uuid)
             except CharacteristicNoAccess as exception:
                 LOGGER.debug("Unable to get data for %s due to %s", uuid, exception)
-            except (GardenaBluetoothException, DeviceUnavailable) as exception:
-                # Grace period: BLE proxies occasionally wedge for a poll or
-                # two (dropped-connection bug in ESPHome 2025.x); blanking
-                # every entity on the first failed 20s poll made the device
-                # flap between available and unavailable. Serve last-known
-                # data for up to MAX_FAILED_POLLS consecutive failures, then
-                # report unavailable for real.
-                self._failed_polls += 1
-                if self.data and self._failed_polls <= MAX_FAILED_POLLS:
-                    LOGGER.warning(
-                        "Poll %d/%d for %s failed (%s); serving cached data",
-                        self._failed_polls,
-                        MAX_FAILED_POLLS,
-                        self.address,
-                        exception,
-                    )
-                    return self.data
-                raise UpdateFailed(
-                    f"Unable to update data for {uuid} due to {exception}"
-                ) from exception
+                return None
+
+        try:
+            async with self.operation_lock:
+                for current_uuid in regular_uuids:
+                    if value := await _read(current_uuid):
+                        data[current_uuid] = value
+
+                now = monotonic()
+                schedule_poll_due = bool(schedule_masks) and (
+                    not schedule_masks.issubset(data)
+                    or now - self._last_schedule_poll >= SCHEDULE_POLL_INTERVAL
+                )
+                if schedule_poll_due:
+                    for schedule in SCHEDULES:
+                        if schedule.repetition_value not in schedule_masks:
+                            continue
+                        current_uuid = schedule.repetition_value
+                        mask = await _read(current_uuid)
+                        if mask is None:
+                            continue
+                        data[current_uuid] = mask
+                        if any(mask):
+                            for current_uuid in schedule.uuids:
+                                if current_uuid == schedule.repetition_value:
+                                    continue
+                                if value := await _read(current_uuid):
+                                    data[current_uuid] = value
+                    self._last_schedule_poll = now
+        except (GardenaBluetoothException, DeviceUnavailable) as exception:
+            # Grace period: BLE proxies occasionally wedge for a poll or
+            # two (dropped-connection bug in ESPHome 2025.x); blanking
+            # every entity on the first failed 20s poll made the device
+            # flap between available and unavailable. Serve last-known
+            # data for up to MAX_FAILED_POLLS consecutive failures, then
+            # report unavailable for real.
+            self._failed_polls += 1
+            if self.data and self._failed_polls <= MAX_FAILED_POLLS:
+                LOGGER.warning(
+                    "Poll %d/%d for %s failed (%s); serving cached data",
+                    self._failed_polls,
+                    MAX_FAILED_POLLS,
+                    self.address,
+                    exception,
+                )
+                return self.data
+            raise UpdateFailed(
+                f"Unable to update data for {current_uuid} due to {exception}"
+            ) from exception
         self._failed_polls = 0
         return data
 
@@ -136,7 +179,8 @@ class GardenaBluetoothCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
     ) -> None:
         """Write characteristic to device."""
         try:
-            await self.client.write_char(char, value)
+            async with self.operation_lock:
+                await self.client.write_char(char, value)
         except (GardenaBluetoothException, DeviceUnavailable) as exception:
             raise HomeAssistantError(
                 f"Unable to write characteristic {char} dur to {exception}"
@@ -163,7 +207,8 @@ class GardenaBluetoothCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
             if attempt:
                 await asyncio.sleep(interval)
             try:
-                value = await self.client.read_char(char)
+                async with self.operation_lock:
+                    value = await self.client.read_char(char)
             except (GardenaBluetoothException, DeviceUnavailable):
                 break
             if value == expected:
@@ -171,3 +216,9 @@ class GardenaBluetoothCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         if value is not None:
             self.data[char.uuid] = char.encode(value)
         return value
+
+    def cache_schedule_snapshot(self, snapshot: dict[str, bytes]) -> None:
+        """Cache an explicitly read schedule and notify its entities."""
+        self.data.update(snapshot)
+        self._last_schedule_poll = monotonic()
+        self.async_update_listeners()
