@@ -35,6 +35,10 @@ home-assistant/discussions/3056).
 8. **Schedule diagnostics** — The integration diagnostics read the Gen-2
    `98bdd...` schedule blocks on demand and report their byte length and hex
    value. They never write schedule data and omit device identifiers.
+9. **Guarded schedule write test** — An experimental diagnostic button checks
+   that valve 1 is paused and schedule slot 3 is completely empty, writes only
+   the start/end offsets, verifies both values, and restores the original bytes
+   in a `finally` block. It never changes recurrence or actuator assignment.
 
 ## Status
 

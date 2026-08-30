@@ -6,6 +6,9 @@
       },
       "reset_error_valve_2": {
         "default": "mdi:alert-circle-check-outline"
+      },
+      "test_schedule_write": {
+        "default": "mdi:test-tube"
       }
     },
     "datetime": {

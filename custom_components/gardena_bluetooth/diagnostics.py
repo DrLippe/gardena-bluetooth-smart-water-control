@@ -60,4 +60,7 @@ async def async_get_config_entry_diagnostics(
                 "hex": value.hex(),
             }
 
-    return {"schedule_characteristics": schedule_data}
+    return {
+        "schedule_characteristics": schedule_data,
+        "schedule_write_test": coordinator.schedule_write_test_result,
+    }

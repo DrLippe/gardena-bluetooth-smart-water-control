@@ -6,6 +6,9 @@
       },
       "reset_error_valve_2": {
         "name": "Ventilfehler 2 zurücksetzen"
+      },
+      "test_schedule_write": {
+        "name": "Zeitplan-Schreibtest"
       }
     },
     "datetime": {

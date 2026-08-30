@@ -47,6 +47,9 @@
       },
       "reset_error_valve_2": {
         "name": "Reset valve 2 error"
+      },
+      "test_schedule_write": {
+        "name": "Test schedule write"
       }
     },
     "datetime": {
