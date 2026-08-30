@@ -1,5 +1,29 @@
 {
   "entity": {
+    "button": {
+      "reset_error_valve_1": {
+        "default": "mdi:alert-circle-check-outline"
+      },
+      "reset_error_valve_2": {
+        "default": "mdi:alert-circle-check-outline"
+      }
+    },
+    "datetime": {
+      "paused_until_valve_1": {
+        "default": "mdi:pause-circle-outline"
+      },
+      "paused_until_valve_2": {
+        "default": "mdi:pause-circle-outline"
+      }
+    },
+    "sensor": {
+      "error_code_valve_1": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "error_code_valve_2": {
+        "default": "mdi:alert-circle-outline"
+      }
+    },
     "text": {
       "contour_name": {
         "default": "mdi:vector-polygon"

@@ -1,0 +1,28 @@
+{
+  "entity": {
+    "button": {
+      "reset_error_valve_1": {
+        "name": "Ventilfehler 1 zurücksetzen"
+      },
+      "reset_error_valve_2": {
+        "name": "Ventilfehler 2 zurücksetzen"
+      }
+    },
+    "datetime": {
+      "paused_until_valve_1": {
+        "name": "Ventil 1 pausiert bis"
+      },
+      "paused_until_valve_2": {
+        "name": "Ventil 2 pausiert bis"
+      }
+    },
+    "sensor": {
+      "error_code_valve_1": {
+        "name": "Fehlercode Ventil 1"
+      },
+      "error_code_valve_2": {
+        "name": "Fehlercode Ventil 2"
+      }
+    }
+  }
+}

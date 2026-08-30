@@ -97,6 +97,18 @@ DESCRIPTIONS = (
         char=Valve2.activation_reason,
     ),
     GardenaBluetoothSensorEntityDescription(
+        key=Valve1.error.unique_id,
+        translation_key="error_code_valve_1",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        char=Valve1.error,
+    ),
+    GardenaBluetoothSensorEntityDescription(
+        key=Valve2.error.unique_id,
+        translation_key="error_code_valve_2",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        char=Valve2.error,
+    ),
+    GardenaBluetoothSensorEntityDescription(
         key=Battery.battery_level.unique_id,
         state_class=SensorStateClass.MEASUREMENT,
         device_class=SensorDeviceClass.BATTERY,

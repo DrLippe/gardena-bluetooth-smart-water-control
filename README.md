@@ -23,6 +23,9 @@ home-assistant/discussions/3056).
 4. **Entities** — Adds `GardenaBluetoothValveX` (open/close), switch
    alias, manual-watering-duration number, remaining-time sensor,
    activation-reason sensor, valve-available binary sensor.
+5. **Valve diagnostics** — Exposes the Valve1/Valve2 error code, a
+   configurable `paused until` timestamp, and a button that resets the
+   actuator error using the parameterless LWM2M Execute command.
 
 ## Status
 

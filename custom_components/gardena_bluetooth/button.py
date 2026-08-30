@@ -2,8 +2,8 @@
 
 from dataclasses import dataclass, field
 
-from gardena_bluetooth.const import Reset
-from gardena_bluetooth.parse import CharacteristicBool
+from gardena_bluetooth.const import Reset, Valve1, Valve2
+from gardena_bluetooth.parse import CharacteristicBool, CharacteristicIntKeys
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory
@@ -18,11 +18,17 @@ from .entity import GardenaBluetoothDescriptorEntity
 class GardenaBluetoothButtonEntityDescription(ButtonEntityDescription):
     """Description of entity."""
 
-    char: CharacteristicBool = field(default_factory=lambda: CharacteristicBool(""))
+    char: CharacteristicBool | CharacteristicIntKeys = field(
+        default_factory=lambda: CharacteristicBool("")
+    )
 
     @property
     def context(self) -> set[str]:
         """Context needed for update coordinator."""
+        # Execute-only LwM2M characteristics cannot be read and therefore must
+        # not be included in the coordinator's polling context.
+        if isinstance(self.char, CharacteristicIntKeys):
+            return set()
         return {self.char.uuid}
 
 
@@ -33,6 +39,18 @@ DESCRIPTIONS = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         char=Reset.factory_reset,
+    ),
+    GardenaBluetoothButtonEntityDescription(
+        key=Valve1.reset_error.unique_id,
+        translation_key="reset_error_valve_1",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        char=Valve1.reset_error,
+    ),
+    GardenaBluetoothButtonEntityDescription(
+        key=Valve2.reset_error.unique_id,
+        translation_key="reset_error_valve_2",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        char=Valve2.reset_error,
     ),
 )
 
@@ -59,4 +77,10 @@ class GardenaBluetoothButton(GardenaBluetoothDescriptorEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Trigger button action."""
-        await self.coordinator.write(self.entity_description.char, True)
+        char = self.entity_description.char
+        if isinstance(char, CharacteristicIntKeys):
+            # LwM2M Execute without arguments is encoded as an empty payload.
+            await self.coordinator.client.write_char(char, {})
+            await self.coordinator.async_refresh()
+            return
+        await self.coordinator.write(char, True)

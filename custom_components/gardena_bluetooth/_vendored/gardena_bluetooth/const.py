@@ -80,11 +80,13 @@ class ValveX(Service, ABC):
     available: ClassVar[CharacteristicBool]
     manual_watering_duration: ClassVar[CharacteristicLong]
     error: ClassVar[CharacteristicInt]
+    paused_until: ClassVar[CharacteristicTime]
     state: ClassVar[CharacteristicBool]
     remaining_time_open: ClassVar[CharacteristicLong]
     activation_reason: ClassVar[CharacteristicIntEnum]
     start_watering: ClassVar[CharacteristicIntKeys]
     stop_watering: ClassVar[CharacteristicIntKeys]
+    reset_error: ClassVar[CharacteristicIntKeys]
 
 
 class Valve1(ValveX):
@@ -95,6 +97,7 @@ class Valve1(ValveX):
     )
     available = CharacteristicBool("98bda002-0b0e-421a-84e5-ddbf75dc6de4", variant="1")
     error = CharacteristicInt("98bda003-0b0e-421a-84e5-ddbf75dc6de4")
+    paused_until = CharacteristicTime("98bda004-0b0e-421a-84e5-ddbf75dc6de4")
     state = CharacteristicBool("98bda008-0b0e-421a-84e5-ddbf75dc6de4")
     remaining_time_open = CharacteristicLong("98bda010-0b0e-421a-84e5-ddbf75dc6de4")
     activation_reason = CharacteristicIntEnum(
@@ -102,6 +105,7 @@ class Valve1(ValveX):
     )
     start_watering = CharacteristicIntKeys("98bda020-0b0e-421a-84e5-ddbf75dc6de4")
     stop_watering = CharacteristicIntKeys("98bda021-0b0e-421a-84e5-ddbf75dc6de4")
+    reset_error = CharacteristicIntKeys("98bda022-0b0e-421a-84e5-ddbf75dc6de4")
 
 
 class Valve2(ValveX):
@@ -112,6 +116,7 @@ class Valve2(ValveX):
     )
     available = CharacteristicBool("98bda002-0b0e-421a-84e5-ddbf75dc6de4", variant="2")
     error = CharacteristicInt("98bda103-0b0e-421a-84e5-ddbf75dc6de4")
+    paused_until = CharacteristicTime("98bda104-0b0e-421a-84e5-ddbf75dc6de4")
     state = CharacteristicBool("98bda108-0b0e-421a-84e5-ddbf75dc6de4")
     remaining_time_open = CharacteristicLong("98bda110-0b0e-421a-84e5-ddbf75dc6de4")
     activation_reason = CharacteristicIntEnum(
@@ -119,6 +124,7 @@ class Valve2(ValveX):
     )
     start_watering = CharacteristicIntKeys("98bda120-0b0e-421a-84e5-ddbf75dc6de4")
     stop_watering = CharacteristicIntKeys("98bda121-0b0e-421a-84e5-ddbf75dc6de4")
+    reset_error = CharacteristicIntKeys("98bda122-0b0e-421a-84e5-ddbf75dc6de4")
 
 
 class DeviceConfiguration(Service):
