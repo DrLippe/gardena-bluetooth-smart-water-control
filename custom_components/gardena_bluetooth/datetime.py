@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from gardena_bluetooth.const import Valve1, Valve2
-from gardena_bluetooth.parse import CharacteristicTime
+from gardena_bluetooth.parse import CharacteristicTime64
 
 from homeassistant.components.datetime import DateTimeEntity, DateTimeEntityDescription
 from homeassistant.const import EntityCategory
@@ -20,7 +20,7 @@ from .entity import GardenaBluetoothDescriptorEntity
 class GardenaBluetoothDateTimeEntityDescription(DateTimeEntityDescription):
     """Description of a Gardena Bluetooth datetime entity."""
 
-    char: CharacteristicTime = field(default_factory=lambda: CharacteristicTime(""))
+    char: CharacteristicTime64 = field(default_factory=lambda: CharacteristicTime64(""))
 
     @property
     def context(self) -> set[str]:

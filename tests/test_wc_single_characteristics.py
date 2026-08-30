@@ -51,11 +51,11 @@ class ValveXCharacteristicTests(unittest.TestCase):
         self.assertTrue(Valve2.reset_error.uuid.startswith("98bda122"))
 
     def test_pause_timestamp_round_trip(self) -> None:
-        """Pause timestamps retain their value through BLE encoding."""
+        """Pause timestamps use the eight-byte Gen-2 BLE encoding."""
         value = datetime(2026, 8, 30, 18, 42, 19)
-        self.assertEqual(
-            Valve1.paused_until.decode(Valve1.paused_until.encode(value)), value
-        )
+        encoded = Valve1.paused_until.encode(value)
+        self.assertEqual(len(encoded), 8)
+        self.assertEqual(Valve1.paused_until.decode(encoded), value)
 
     def test_reset_error_has_empty_execute_payload(self) -> None:
         """A parameterless LwM2M Execute is represented by an empty payload."""

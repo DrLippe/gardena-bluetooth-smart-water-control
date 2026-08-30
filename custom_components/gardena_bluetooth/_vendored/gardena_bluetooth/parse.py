@@ -493,6 +493,18 @@ class CharacteristicTime(Characteristic[datetime]):
 
 
 @dataclass
+class CharacteristicTime64(CharacteristicTime):
+    """Gen-2 LwM2M time encoded as a signed 64-bit Unix timestamp."""
+
+    @classmethod
+    def encode(cls, value: datetime) -> bytes:
+        """Encode a datetime using the eight-byte Gen-2 representation."""
+        return int(value.replace(tzinfo=timezone.utc).timestamp()).to_bytes(
+            8, "little", signed=True
+        )
+
+
+@dataclass
 class CharacteristicTimeOfDay(Characteristic[time]):
     @classmethod
     def decode(cls, data: bytes) -> time:
