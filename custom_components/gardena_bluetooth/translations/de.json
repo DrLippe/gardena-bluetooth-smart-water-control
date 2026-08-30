@@ -9,6 +9,9 @@
       },
       "test_schedule_write": {
         "name": "Zeitplan-Schreibtest"
+      },
+      "test_full_schedule_write": {
+        "name": "Vollständiger Zeitplan-Schreibtest"
       }
     },
     "datetime": {

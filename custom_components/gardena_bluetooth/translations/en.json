@@ -50,6 +50,9 @@
       },
       "test_schedule_write": {
         "name": "Test schedule write"
+      },
+      "test_full_schedule_write": {
+        "name": "Test complete schedule write"
       }
     },
     "datetime": {

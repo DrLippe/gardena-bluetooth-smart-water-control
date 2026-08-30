@@ -9,6 +9,9 @@
       },
       "test_schedule_write": {
         "default": "mdi:test-tube"
+      },
+      "test_full_schedule_write": {
+        "default": "mdi:calendar-clock-outline"
       }
     },
     "datetime": {

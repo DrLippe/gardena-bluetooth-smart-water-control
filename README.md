@@ -39,6 +39,10 @@ home-assistant/discussions/3056).
    that valve 1 is paused and schedule slot 3 is completely empty, writes only
    the start/end offsets, verifies both values, and restores the original bytes
    in a `finally` block. It never changes recurrence or actuator assignment.
+10. **Guarded full schedule test** — A second disabled-by-default diagnostic
+    temporarily writes sunrise-relative offsets and a one-day repetition mask.
+    Recurrence is written last, cleared first during cleanup, and a full before,
+    active, and restored snapshot is included in downloaded diagnostics.
 
 ## Status
 

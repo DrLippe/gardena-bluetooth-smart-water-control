@@ -63,4 +63,5 @@ async def async_get_config_entry_diagnostics(
     return {
         "schedule_characteristics": schedule_data,
         "schedule_write_test": coordinator.schedule_write_test_result,
+        "schedule_full_write_test": coordinator.schedule_full_write_test_result,
     }

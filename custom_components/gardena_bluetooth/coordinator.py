@@ -63,6 +63,7 @@ class GardenaBluetoothCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         self.characteristics = characteristics
         self.device_info = device_info
         self.schedule_write_test_result: dict[str, object] | None = None
+        self.schedule_full_write_test_result: dict[str, object] | None = None
 
     async def async_shutdown(self) -> None:
         """Shutdown coordinator and any connection.
