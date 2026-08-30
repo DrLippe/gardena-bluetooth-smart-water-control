@@ -32,6 +32,9 @@ home-assistant/discussions/3056).
    Control devices. Live testing confirmed that it resets to zero after a
    power cycle. UUIDs `0102`–`0104` are deliberately not exposed for this
    product family because their pump meanings do not apply to the G-19033.
+8. **Schedule diagnostics** — The integration diagnostics read the Gen-2
+   `98bdd...` schedule blocks on demand and report their byte length and hex
+   value. They never write schedule data and omit device identifiers.
 
 ## Status
 
