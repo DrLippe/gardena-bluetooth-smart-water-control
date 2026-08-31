@@ -169,8 +169,8 @@
       "flow_statistics_resettable": {
         "name": "Flow since reset"
       },
-      "device_uptime": {
-        "name": "Device uptime"
+      "device_time": {
+        "name": "Device time"
       },
       "watering_schedule": {
         "name": "Watering schedule {slot}",

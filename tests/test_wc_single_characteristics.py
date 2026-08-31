@@ -35,11 +35,12 @@ def _load_vendored_library() -> None:
 _load_vendored_library()
 
 from gardena_bluetooth.const import (  # noqa: E402
+    HybridWaterControlDeviceConfiguration,
     Pump,
     Valve1,
     Valve2,
-    WaterComputerDiagnostics,
 )
+from gardena_bluetooth.parse import ProductType, Service  # noqa: E402
 from gardena_bluetooth.schedule import (  # noqa: E402
     SCHEDULES,
     decode_schedule,
@@ -166,12 +167,22 @@ class ValveXCharacteristicTests(unittest.TestCase):
         self.assertTrue(Pump.flow_rate.uuid.startswith("98bd0103"))
         self.assertTrue(Pump.ptu_mode.uuid.startswith("98bd0104"))
 
-    def test_water_computer_uptime_characteristic(self) -> None:
-        """The G-19033 0101 value is a four-byte uptime in seconds."""
-        self.assertTrue(WaterComputerDiagnostics.uptime.uuid.startswith("98bd0101"))
-        encoded = WaterComputerDiagnostics.uptime.encode(73)
-        self.assertEqual(encoded, bytes.fromhex("49000000"))
-        self.assertEqual(WaterComputerDiagnostics.uptime.decode(encoded), 73)
+    def test_water_computer_timestamp_characteristic(self) -> None:
+        """The G-19033 0101 value is its four-byte Unix device clock."""
+        timestamp = HybridWaterControlDeviceConfiguration.unix_timestamp
+        self.assertTrue(timestamp.uuid.startswith("98bd0101"))
+        value = datetime(2026, 8, 31, 12, 34, 56)
+        encoded = timestamp.encode(value)
+        self.assertEqual(len(encoded), 4)
+        self.assertEqual(timestamp.decode(encoded), value)
+
+    def test_0100_service_has_product_specific_meaning(self) -> None:
+        """Water controls must not decode their clock with pump semantics."""
+        service = Service.find_service(
+            "98bd0100-0b0e-421a-84e5-ddbf75dc6de4",
+            ProductType.WATER_COMPUTER,
+        )
+        self.assertIs(service, HybridWaterControlDeviceConfiguration)
 
     def test_water_diagnostic_uint16_decoding(self) -> None:
         """Pressure and flow raw values are unsigned little-endian integers."""

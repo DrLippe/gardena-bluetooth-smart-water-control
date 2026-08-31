@@ -10,13 +10,13 @@ from gardena_bluetooth.const import (
     Battery,
     EventHistory,
     FlowStatistics,
+    HybridWaterControlDeviceConfiguration,
     Pump,
     Sensor,
     Spray,
     Valve,
     Valve1,
     Valve2,
-    WaterComputerDiagnostics,
 )
 from gardena_bluetooth.parse import Characteristic, ProductType
 from gardena_bluetooth.schedule import SCHEDULES, decode_schedule
@@ -33,7 +33,6 @@ from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
     UnitOfPressure,
-    UnitOfTime,
     UnitOfVolume,
     UnitOfVolumeFlowRate,
 )
@@ -274,12 +273,12 @@ PUMP_DESCRIPTIONS = (
 
 WATER_COMPUTER_DIAGNOSTIC_DESCRIPTIONS = (
     GardenaBluetoothSensorEntityDescription(
-        key=WaterComputerDiagnostics.uptime.unique_id,
-        translation_key="device_uptime",
-        device_class=SensorDeviceClass.DURATION,
+        key=HybridWaterControlDeviceConfiguration.unix_timestamp.unique_id,
+        translation_key="device_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        char=WaterComputerDiagnostics.uptime,
+        char=HybridWaterControlDeviceConfiguration.unix_timestamp,
+        get=_get_timestamp,
     ),
 )
 

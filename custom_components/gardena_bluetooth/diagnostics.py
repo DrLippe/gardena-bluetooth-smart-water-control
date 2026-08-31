@@ -26,16 +26,14 @@ VALVE_DIAGNOSTIC_UUIDS = frozenset(
 )
 SYSTEM_DIAGNOSTIC_UUIDS = frozenset(
     {
-        "98bd0101",  # Confirmed device uptime on wc_single
-        "98bd0102",
-        "98bd0103",
+        "98bd0101",  # Device Unix timestamp
+        "98bd0102",  # Global watering pause until
+        "98bd0103",  # Seasonal runtime percentage
         "98bd0104",
-        # This block is exposed by G-19033/G-19034 but is not documented yet.
-        # Capturing it around a missed schedule may reveal clock/timeslot state.
-        "98bd9001",
-        "98bd9002",
-        "98bd9003",
-        "98bd9004",
+        "98bd9001",  # Valve 1 event timestamps
+        "98bd9002",  # Valve 1 event count
+        "98bd9003",  # Valve 1 event skip reasons
+        "98bd9004",  # Valve 1 event watering durations
     }
 )
 READ_TIMEOUT = 10

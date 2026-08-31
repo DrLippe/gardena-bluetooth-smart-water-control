@@ -22,7 +22,12 @@ for _mod in [m for m in list(sys.modules) if m == "gardena_bluetooth" or m.start
 
 from bleak.backends.device import BLEDevice
 from gardena_bluetooth.client import CachedConnection, Client
-from gardena_bluetooth.const import AquaContour, DeviceConfiguration, DeviceInformation
+from gardena_bluetooth.const import (
+    AquaContour,
+    DeviceConfiguration,
+    DeviceInformation,
+    HybridWaterControlDeviceConfiguration,
+)
 from gardena_bluetooth.exceptions import (
     CharacteristicNoAccess,
     CharacteristicNotFound,
@@ -156,6 +161,10 @@ async def async_setup_entry(
 
         await _update_timestamp(client, DeviceConfiguration.unix_timestamp)
         await _update_timestamp(client, AquaContour.unix_timestamp)
+        if product_type == ProductType.WATER_COMPUTER:
+            await _update_timestamp(
+                client, HybridWaterControlDeviceConfiguration.unix_timestamp
+            )
 
     except (TimeoutError, CommunicationFailure, DeviceUnavailable) as exception:
         await client.disconnect()

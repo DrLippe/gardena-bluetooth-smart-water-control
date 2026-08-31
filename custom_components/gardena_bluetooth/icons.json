@@ -23,8 +23,8 @@
       "error_code_valve_2": {
         "default": "mdi:alert-circle-outline"
       },
-      "device_uptime": {
-        "default": "mdi:timer-outline"
+      "device_time": {
+        "default": "mdi:clock-outline"
       },
       "watering_schedule": {
         "default": "mdi:calendar-clock-outline"

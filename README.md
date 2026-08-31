@@ -28,10 +28,11 @@ home-assistant/discussions/3056).
    actuator error using the parameterless LWM2M Execute command.
 6. **Valve names** — Exposes the Gen-2 actuator name as a writable text
    entity (`98bda005` for valve 1 and `98bda105` for valve 2).
-7. **Device uptime** — Exposes `98bd0101` as uptime in seconds on Water
-   Control devices. Live testing confirmed that it resets to zero after a
-   power cycle. UUIDs `0102`–`0104` are deliberately not exposed for this
-   product family because their pump meanings do not apply to the G-19033.
+7. **Device clock** — Synchronizes the G-1903x Unix clock (`98bd0101`) when
+   Home Assistant connects and exposes it as diagnostic device time. Gardena's
+   Android library confirms the value is a 32-bit little-endian Unix timestamp;
+   without synchronization it restarts at zero after a battery change and
+   prevents weekly schedules from running at the expected local time.
 8. **Watering schedules** — Exposes all three Gen-2 schedule slots as sensors
    and adds `gardena_bluetooth.set_schedule` and
    `gardena_bluetooth.clear_schedule` actions. Fixed local start/end times and
