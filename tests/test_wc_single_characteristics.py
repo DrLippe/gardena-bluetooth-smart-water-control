@@ -216,9 +216,32 @@ class ValveXCharacteristicTests(unittest.TestCase):
             schedule.pre_offset: b"\x00\x00",
         }
         decoded = decode_schedule(schedule, raw)
+        self.assertEqual(encoded[schedule.end_reference], b"\x04")
+        self.assertEqual(
+            encoded[schedule.end_offset], bytes.fromhex("08070000")
+        )
         self.assertEqual(decoded.start_time, time(6, 15))
         self.assertEqual(decoded.end_time, time(6, 45))
+        self.assertEqual(decoded.duration_seconds, 30 * 60)
         self.assertEqual(decoded.weekdays, ("monday", "wednesday", "friday"))
+        self.assertTrue(decoded.supported)
+
+    def test_legacy_absolute_end_time_is_still_decoded(self) -> None:
+        """Schedules previously written with an absolute end remain readable."""
+        schedule = SCHEDULES[0]
+        raw = {
+            schedule.start_reference: b"\x00",
+            schedule.start_offset: (6 * 3600).to_bytes(4, "little"),
+            schedule.end_reference: b"\x00",
+            schedule.end_offset: (6 * 3600 + 900).to_bytes(4, "little"),
+            schedule.repetition_type: b"\x02",
+            schedule.repetition_value: bytes.fromhex("7f000000"),
+            schedule.actuator: b"\x00",
+            schedule.pre_offset: b"\x00\x00",
+        }
+        decoded = decode_schedule(schedule, raw)
+        self.assertEqual(decoded.end_time, time(6, 15))
+        self.assertEqual(decoded.duration_seconds, 900)
         self.assertTrue(decoded.supported)
 
     def test_fixed_schedule_rejects_invalid_ranges(self) -> None:

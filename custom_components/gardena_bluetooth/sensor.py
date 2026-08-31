@@ -425,6 +425,7 @@ class GardenaBluetoothScheduleSensor(GardenaBluetoothEntity, SensorEntity):
             "start_offset": schedule.start_offset,
             "end_reference": schedule.end_reference,
             "end_offset": schedule.end_offset,
+            "duration_seconds": schedule.duration_seconds,
             "repetition_type": schedule.repetition_type,
             "repetition_value": schedule.repetition_value,
             "actuator": schedule.actuator,

@@ -7,6 +7,7 @@ from typing import Mapping
 UUID_SUFFIX = "-0b0e-421a-84e5-ddbf75dc6de4"
 SCHEDULE_SLOT_COUNT = 3
 REFERENCE_MIDNIGHT = 0
+REFERENCE_DURATION = 4
 REPETITION_TYPE_WEEKDAYS = 2
 
 # Gardena's weekday representation starts with Sunday in bit 0.
@@ -153,10 +154,21 @@ class DecodedSchedule:
 
     @property
     def end_time(self) -> time | None:
-        """Return a fixed end time, or None for solar references."""
-        if self.end_reference != REFERENCE_MIDNIGHT:
+        """Return the calculated fixed end time."""
+        if self.end_reference == REFERENCE_MIDNIGHT:
+            return seconds_to_time(self.end_offset)
+        if self.end_reference == REFERENCE_DURATION:
+            return seconds_to_time(self.start_offset + self.end_offset)
+        return None
+
+    @property
+    def duration_seconds(self) -> int | None:
+        """Return the watering duration for a fixed schedule."""
+        if self.start_time is None or self.end_time is None:
             return None
-        return seconds_to_time(self.end_offset)
+        if self.end_reference == REFERENCE_DURATION:
+            return self.end_offset
+        return self.end_offset - self.start_offset
 
     @property
     def supported(self) -> bool:
@@ -223,8 +235,10 @@ def encode_fixed_schedule(
     return {
         schedule.start_reference: REFERENCE_MIDNIGHT.to_bytes(1, "little"),
         schedule.start_offset: start_seconds.to_bytes(4, "little", signed=True),
-        schedule.end_reference: REFERENCE_MIDNIGHT.to_bytes(1, "little"),
-        schedule.end_offset: end_seconds.to_bytes(4, "little", signed=True),
+        schedule.end_reference: REFERENCE_DURATION.to_bytes(1, "little"),
+        schedule.end_offset: (end_seconds - start_seconds).to_bytes(
+            4, "little", signed=True
+        ),
         schedule.repetition_type: REPETITION_TYPE_WEEKDAYS.to_bytes(1, "little"),
         schedule.repetition_value: encode_weekdays(weekdays).to_bytes(4, "little"),
     }
