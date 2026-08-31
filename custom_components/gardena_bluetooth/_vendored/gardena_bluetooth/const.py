@@ -329,6 +329,11 @@ class ErrorHistory(Service):
 
 class Pump(Service):
     uuid = "98bd0100-0b0e-421a-84e5-ddbf75dc6de4"
+    products = {
+        ProductType.PUMP,
+        ProductType.PRESSURE_TANKS,
+        ProductType.AUTOMATS,
+    }
 
     status = CharacteristicInt("98bd0101-0b0e-421a-84e5-ddbf75dc6de4")
     tank_preassure = CharacteristicUInt16("98bd0102-0b0e-421a-84e5-ddbf75dc6de4")
@@ -349,15 +354,24 @@ class Pump(Service):
     total_motor_runtime = CharacteristicLong("98bd0111-0b0e-421a-84e5-ddbf75dc6de4")
 
 
-class WaterComputerDiagnostics:
-    """G-1903x diagnostics sharing UUIDs with the pump service.
+class HybridWaterControlDeviceConfiguration(Service):
+    """G-1903x device configuration sharing UUIDs with the pump service."""
 
-    The 0100 block is also present on Smart Water Control devices, but its
-    values do not have the pump semantics above. On a G-19033, 0101 resets
-    after a power cycle and then advances once per second.
-    """
+    uuid = "98bd0100-0b0e-421a-84e5-ddbf75dc6de4"
+    products = {ProductType.WATER_COMPUTER}
 
-    uptime = CharacteristicLong("98bd0101-0b0e-421a-84e5-ddbf75dc6de4")
+    # Confirmed against Gardena's bluetooth_watering Android library. Without
+    # synchronizing this clock after a battery change, weekly schedules are
+    # stored correctly but evaluated against a timestamp starting at zero.
+    unix_timestamp = CharacteristicTime(
+        "98bd0101-0b0e-421a-84e5-ddbf75dc6de4"
+    )
+    watering_pause_until = CharacteristicTime(
+        "98bd0102-0b0e-421a-84e5-ddbf75dc6de4"
+    )
+    seasonal_runtime = CharacteristicInt(
+        "98bd0103-0b0e-421a-84e5-ddbf75dc6de4"
+    )
 
 
 class Spray(Service):

@@ -1,5 +1,8 @@
 """Config flow for Gardena Bluetooth integration."""
 
+from __future__ import annotations
+
+from datetime import time
 import logging
 from typing import Any
 
@@ -7,6 +10,7 @@ from gardena_bluetooth.client import Client
 from gardena_bluetooth.const import PRODUCT_NAMES, DeviceInformation
 from gardena_bluetooth.exceptions import CharacteristicNotFound, CommunicationFailure
 from gardena_bluetooth.parse import ManufacturerData, ProductType
+from gardena_bluetooth.schedule import SCHEDULES, WEEKDAY_ORDER
 from gardena_bluetooth.scan import async_get_manufacturer_data
 import voluptuous as vol
 
@@ -14,12 +18,32 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfo,
     async_discovered_service_info,
 )
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_ADDRESS
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import AbortFlow
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.selector import (
+    BooleanSelector,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+    TimeSelector,
+)
 
 from . import get_connection
 from .const import CONF_PRODUCT_TYPE, DOMAIN
+from .schedule_manager import (
+    async_clear_schedule,
+    async_read_schedule,
+    async_set_schedule,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,6 +55,11 @@ _SUPPORTED_PRODUCT_TYPES = {
     ProductType.PRESSURE_TANKS,
     ProductType.AQUA_CONTOURS,
 }
+
+CONF_ENABLED = "enabled"
+CONF_START_TIME = "start_time"
+CONF_END_TIME = "end_time"
+CONF_WEEKDAYS = "weekdays"
 
 
 def _is_supported(discovery_info: BluetoothServiceInfo):
@@ -58,6 +87,15 @@ class GardenaBluetoothConfigFlow(ConfigFlow, domain=DOMAIN):
         self.devices: dict[str, str] = {}
         self.product_types: dict[str, str] = {}
         self.address: str | None
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> GardenaBluetoothOptionsFlow:
+        """Return the watering schedule editor."""
+        del config_entry
+        return GardenaBluetoothOptionsFlow()
 
     async def async_read_data(self):
         """Try to connect to device and extract information."""
@@ -158,3 +196,167 @@ class GardenaBluetoothConfigFlow(ConfigFlow, domain=DOMAIN):
                 },
             ),
         )
+
+
+class GardenaBluetoothOptionsFlow(OptionsFlow):
+    """Edit Smart Water Control schedules directly from the integration."""
+
+    def __init__(self) -> None:
+        """Initialize options flow state."""
+        self._defaults: dict[int, dict[str, Any]] = {}
+
+    def _schedule_is_supported(self, slot: int) -> bool:
+        """Return whether the connected device exposes a complete slot."""
+        schedule = SCHEDULES[slot - 1]
+        return set(schedule.uuids).issubset(
+            self.config_entry.runtime_data.raw_characteristics
+        )
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show the schedule slot menu."""
+        del user_input
+        try:
+            _ = self.config_entry.runtime_data
+        except RuntimeError:
+            return self.async_abort(reason="entry_not_loaded")
+        if not any(self._schedule_is_supported(slot) for slot in range(1, 4)):
+            return self.async_abort(reason="schedules_not_supported")
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=[
+                f"schedule_{slot}"
+                for slot in range(1, 4)
+                if self._schedule_is_supported(slot)
+            ],
+        )
+
+    async def _async_get_defaults(self, slot: int) -> dict[str, Any]:
+        """Read one slot and build values for the editor form."""
+        if slot in self._defaults:
+            return self._defaults[slot]
+
+        decoded = await async_read_schedule(self.config_entry.runtime_data, slot)
+        start = decoded.start_time
+        end = decoded.end_time
+        if start is None or end is None or end <= start:
+            start = time(6, 0)
+            end = time(6, 30)
+        defaults = {
+            CONF_ENABLED: decoded.active,
+            CONF_START_TIME: start.isoformat(),
+            CONF_END_TIME: end.isoformat(),
+            CONF_WEEKDAYS: list(decoded.weekdays) or list(WEEKDAY_ORDER),
+        }
+        self._defaults[slot] = defaults
+        return defaults
+
+    def _schedule_schema(self, defaults: dict[str, Any]) -> vol.Schema:
+        """Return the common schedule editor schema."""
+        return vol.Schema(
+            {
+                vol.Required(
+                    CONF_ENABLED, default=defaults[CONF_ENABLED]
+                ): BooleanSelector(),
+                vol.Required(
+                    CONF_START_TIME, default=defaults[CONF_START_TIME]
+                ): TimeSelector(),
+                vol.Required(
+                    CONF_END_TIME, default=defaults[CONF_END_TIME]
+                ): TimeSelector(),
+                vol.Required(
+                    CONF_WEEKDAYS, default=defaults[CONF_WEEKDAYS]
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(WEEKDAY_ORDER),
+                        multiple=True,
+                        mode=SelectSelectorMode.DROPDOWN,
+                        translation_key="weekday",
+                    )
+                ),
+            }
+        )
+
+    async def _async_schedule_step(
+        self, slot: int, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        """Edit, enable, disable, or clear one schedule slot."""
+        errors: dict[str, str] = {}
+        try:
+            defaults = await self._async_get_defaults(slot)
+        except HomeAssistantError:
+            _LOGGER.exception("Unable to read watering schedule slot %s", slot)
+            defaults = {
+                CONF_ENABLED: False,
+                CONF_START_TIME: "06:00:00",
+                CONF_END_TIME: "06:30:00",
+                CONF_WEEKDAYS: list(WEEKDAY_ORDER),
+            }
+            self._defaults[slot] = defaults
+            if user_input is None:
+                errors["base"] = "cannot_read_schedule"
+
+        if user_input is not None:
+            enabled = user_input[CONF_ENABLED]
+            if enabled:
+                start = cv.time(user_input[CONF_START_TIME])
+                end = cv.time(user_input[CONF_END_TIME])
+                weekdays = list(user_input[CONF_WEEKDAYS])
+                if end <= start:
+                    errors["base"] = "schedule_end_not_after_start"
+                elif not weekdays:
+                    errors[CONF_WEEKDAYS] = "weekdays_required"
+                else:
+                    try:
+                        await async_set_schedule(
+                            self.config_entry.runtime_data,
+                            slot,
+                            start,
+                            end,
+                            weekdays,
+                        )
+                    except HomeAssistantError:
+                        _LOGGER.exception(
+                            "Unable to update watering schedule slot %s", slot
+                        )
+                        errors["base"] = "cannot_update_schedule"
+            else:
+                try:
+                    await async_clear_schedule(self.config_entry.runtime_data, slot)
+                except HomeAssistantError:
+                    _LOGGER.exception(
+                        "Unable to clear watering schedule slot %s", slot
+                    )
+                    errors["base"] = "cannot_update_schedule"
+
+            if not errors:
+                return self.async_create_entry(
+                    title="", data=dict(self.config_entry.options)
+                )
+            defaults = user_input
+
+        return self.async_show_form(
+            step_id=f"schedule_{slot}",
+            data_schema=self._schedule_schema(defaults),
+            errors=errors,
+            description_placeholders={"slot": str(slot)},
+        )
+
+    async def async_step_schedule_1(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit schedule slot 1."""
+        return await self._async_schedule_step(1, user_input)
+
+    async def async_step_schedule_2(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit schedule slot 2."""
+        return await self._async_schedule_step(2, user_input)
+
+    async def async_step_schedule_3(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit schedule slot 3."""
+        return await self._async_schedule_step(3, user_input)

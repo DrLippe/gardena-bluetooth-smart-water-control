@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from gardena_bluetooth.const import (
     AquaContourWatering,
     DeviceConfiguration,
+    HybridWaterControlDeviceConfiguration,
     Sensor,
     Spray,
     Valve,
@@ -30,6 +31,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import GardenaBluetoothConfigEntry, GardenaBluetoothCoordinator
 from .entity import GardenaBluetoothDescriptorEntity, GardenaBluetoothEntity
+from .seasonal import reduction_from_runtime, runtime_from_reduction
 
 
 @dataclass(frozen=True)
@@ -189,6 +191,11 @@ async def async_setup_entry(
     ]
     if Valve.remaining_open_time.unique_id in coordinator.characteristics:
         entities.append(GardenaBluetoothRemainingOpenSetNumber(coordinator))
+    if (
+        HybridWaterControlDeviceConfiguration.seasonal_runtime.unique_id
+        in coordinator.characteristics
+    ):
+        entities.append(GardenaBluetoothSeasonalReductionNumber(coordinator))
     async_add_entities(entities)
 
 
@@ -241,4 +248,41 @@ class GardenaBluetoothRemainingOpenSetNumber(GardenaBluetoothEntity, NumberEntit
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""
         await self.coordinator.write(Valve.remaining_open_time, int(value * 60))
+        self.async_write_ha_state()
+
+
+class GardenaBluetoothSeasonalReductionNumber(GardenaBluetoothEntity, NumberEntity):
+    """User-facing seasonal reduction for the Smart Water Control."""
+
+    _attr_translation_key = "seasonal_reduction"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_mode = NumberMode.SLIDER
+    _attr_native_min_value = 0.0
+    _attr_native_max_value = 100.0
+    _attr_native_step = 1.0
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator: GardenaBluetoothCoordinator) -> None:
+        """Initialize the seasonal reduction entity."""
+        char = HybridWaterControlDeviceConfiguration.seasonal_runtime
+        super().__init__(coordinator, {char.uuid})
+        self._attr_unique_id = f"{coordinator.address}-seasonal-reduction"
+
+    def _handle_coordinator_update(self) -> None:
+        """Convert the remaining-runtime value reported by the device."""
+        char = HybridWaterControlDeviceConfiguration.seasonal_runtime
+        runtime = self.coordinator.get_cached(char)
+        if runtime is None:
+            self._attr_native_value = None
+        else:
+            try:
+                self._attr_native_value = reduction_from_runtime(runtime)
+            except ValueError:
+                self._attr_native_value = None
+        super()._handle_coordinator_update()
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the seasonal reduction percentage."""
+        char = HybridWaterControlDeviceConfiguration.seasonal_runtime
+        await self.coordinator.write(char, runtime_from_reduction(value))
         self.async_write_ha_state()
