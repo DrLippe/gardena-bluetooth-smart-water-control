@@ -8,7 +8,10 @@ UUID_SUFFIX = "-0b0e-421a-84e5-ddbf75dc6de4"
 SCHEDULE_SLOT_COUNT = 3
 REFERENCE_MIDNIGHT = 0
 REFERENCE_DURATION = 4
-REPETITION_TYPE_WEEKDAYS = 2
+# The public HWC client writes the weekday mask but has no repetition-type
+# setter. Empty/factory schedule instances use 0 for this field, so it must be
+# kept at 0 when enabling the weekly weekday bitmask.
+REPETITION_TYPE_WEEKDAYS = 0
 
 # Gardena's weekday representation starts with Sunday in bit 0.
 WEEKDAY_BITS = {

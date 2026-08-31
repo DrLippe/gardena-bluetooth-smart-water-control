@@ -234,7 +234,7 @@ class ValveXCharacteristicTests(unittest.TestCase):
             schedule.start_offset: (6 * 3600).to_bytes(4, "little"),
             schedule.end_reference: b"\x00",
             schedule.end_offset: (6 * 3600 + 900).to_bytes(4, "little"),
-            schedule.repetition_type: b"\x02",
+            schedule.repetition_type: b"\x00",
             schedule.repetition_value: bytes.fromhex("7f000000"),
             schedule.actuator: b"\x00",
             schedule.pre_offset: b"\x00\x00",
