@@ -1,4 +1,56 @@
 {
+  "options": {
+    "abort": {
+      "entry_not_loaded": "Das Gerät muss geladen sein, bevor seine Bewässerungspläne bearbeitet werden können.",
+      "schedules_not_supported": "Dieses Gerät unterstützt keine bearbeitbaren Bewässerungspläne."
+    },
+    "error": {
+      "cannot_read_schedule": "Der Bewässerungsplan konnte nicht vom Gerät gelesen werden.",
+      "cannot_update_schedule": "Der Bewässerungsplan konnte nicht auf dem Gerät gespeichert werden.",
+      "schedule_end_not_after_start": "Die Endzeit muss nach der Startzeit liegen.",
+      "weekdays_required": "Wähle mindestens einen Wochentag aus."
+    },
+    "step": {
+      "init": {
+        "title": "Bewässerungspläne",
+        "menu_options": {
+          "schedule_1": "Plan 1 bearbeiten",
+          "schedule_2": "Plan 2 bearbeiten",
+          "schedule_3": "Plan 3 bearbeiten"
+        }
+      },
+      "schedule_1": {
+        "title": "Bewässerungsplan 1",
+        "description": "Konfiguriert Slot {slot}. Beim Deaktivieren wird der Plan vom Gerät gelöscht.",
+        "data": {
+          "enabled": "Aktiviert",
+          "start_time": "Startzeit",
+          "end_time": "Endzeit",
+          "weekdays": "Wochentage"
+        }
+      },
+      "schedule_2": {
+        "title": "Bewässerungsplan 2",
+        "description": "Konfiguriert Slot {slot}. Beim Deaktivieren wird der Plan vom Gerät gelöscht.",
+        "data": {
+          "enabled": "Aktiviert",
+          "start_time": "Startzeit",
+          "end_time": "Endzeit",
+          "weekdays": "Wochentage"
+        }
+      },
+      "schedule_3": {
+        "title": "Bewässerungsplan 3",
+        "description": "Konfiguriert Slot {slot}. Beim Deaktivieren wird der Plan vom Gerät gelöscht.",
+        "data": {
+          "enabled": "Aktiviert",
+          "start_time": "Startzeit",
+          "end_time": "Endzeit",
+          "weekdays": "Wochentage"
+        }
+      }
+    }
+  },
   "entity": {
     "button": {
       "reset_error_valve_1": {
@@ -14,6 +66,11 @@
       },
       "paused_until_valve_2": {
         "name": "Ventil 2 pausiert bis"
+      }
+    },
+    "number": {
+      "seasonal_reduction": {
+        "name": "Saisonale Bewässerungsreduktion"
       }
     },
     "sensor": {

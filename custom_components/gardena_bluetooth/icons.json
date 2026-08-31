@@ -16,6 +16,11 @@
         "default": "mdi:pause-circle-outline"
       }
     },
+    "number": {
+      "seasonal_reduction": {
+        "default": "mdi:water-percent"
+      }
+    },
     "sensor": {
       "error_code_valve_1": {
         "default": "mdi:alert-circle-outline"

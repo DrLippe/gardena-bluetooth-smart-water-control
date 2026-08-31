@@ -8,6 +8,7 @@ from datetime import time
 from typing import TYPE_CHECKING
 
 from gardena_bluetooth.schedule import (
+    DecodedSchedule,
     ScheduleCharacteristics,
     decode_schedule,
     encode_fixed_schedule,
@@ -131,6 +132,26 @@ def _ensure_supported(
         raise HomeAssistantError(
             f"Schedule slot {schedule.slot} is not supported by this device"
         )
+
+
+async def async_read_schedule(
+    coordinator: GardenaBluetoothCoordinator, slot: int
+) -> DecodedSchedule:
+    """Read and cache a complete schedule directly from the device."""
+    schedule = schedule_characteristics(slot)
+    _ensure_supported(coordinator, schedule)
+    try:
+        async with coordinator.operation_lock:
+            snapshot = await _read_snapshot_locked(coordinator, schedule)
+    except asyncio.CancelledError:
+        raise
+    except Exception as exception:
+        raise HomeAssistantError(
+            f"Unable to read schedule slot {slot}"
+        ) from exception
+
+    coordinator.cache_schedule_snapshot(snapshot)
+    return decode_schedule(schedule, snapshot)
 
 
 async def async_set_schedule(

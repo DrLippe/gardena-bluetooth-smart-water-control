@@ -80,6 +80,25 @@ def _load_schedule_manager():
 SCHEDULE_MANAGER, HomeAssistantError = _load_schedule_manager()
 
 
+def _load_seasonal_helpers():
+    """Load pure seasonal conversion helpers without Home Assistant."""
+    path = (
+        Path(__file__).parents[1]
+        / "custom_components"
+        / "gardena_bluetooth"
+        / "seasonal.py"
+    )
+    spec = importlib.util.spec_from_file_location("seasonal_test", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load seasonal helpers")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+SEASONAL = _load_seasonal_helpers()
+
+
 class FakeScheduleClient:
     """In-memory raw characteristic client with optional write failure."""
 
@@ -175,6 +194,20 @@ class ValveXCharacteristicTests(unittest.TestCase):
         encoded = timestamp.encode(value)
         self.assertEqual(len(encoded), 4)
         self.assertEqual(timestamp.decode(encoded), value)
+
+    def test_seasonal_reduction_inverts_device_runtime(self) -> None:
+        """An 80% UI reduction is stored as 20% remaining runtime."""
+        self.assertEqual(SEASONAL.runtime_from_reduction(80), 20)
+        self.assertEqual(SEASONAL.reduction_from_runtime(20), 80.0)
+        self.assertEqual(SEASONAL.runtime_from_reduction(0), 100)
+        self.assertEqual(SEASONAL.runtime_from_reduction(100), 0)
+
+    def test_seasonal_reduction_rejects_out_of_range_values(self) -> None:
+        """Invalid percentages must never be written to the device."""
+        with self.assertRaises(ValueError):
+            SEASONAL.runtime_from_reduction(101)
+        with self.assertRaises(ValueError):
+            SEASONAL.reduction_from_runtime(-1)
 
     def test_0100_service_has_product_specific_meaning(self) -> None:
         """Water controls must not decode their clock with pump semantics."""
@@ -304,6 +337,28 @@ class ScheduleTransactionTests(unittest.IsolatedAsyncioTestCase):
             coordinator.cached_snapshot[schedule.repetition_value],
             bytes.fromhex("01000000"),
         )
+
+    async def test_schedule_editor_reads_fresh_snapshot(self) -> None:
+        schedule = SCHEDULES[0]
+        values = {
+            **_empty_schedule_values(1),
+            **encode_fixed_schedule(
+                schedule,
+                time(7, 25),
+                time(7, 30),
+                ["monday", "tuesday", "wednesday"],
+            ),
+        }
+        coordinator = FakeScheduleCoordinator(FakeScheduleClient(values))
+
+        decoded = await SCHEDULE_MANAGER.async_read_schedule(coordinator, 1)
+
+        self.assertEqual(decoded.start_time, time(7, 25))
+        self.assertEqual(decoded.end_time, time(7, 30))
+        self.assertEqual(
+            decoded.weekdays, ("monday", "tuesday", "wednesday")
+        )
+        self.assertEqual(coordinator.cached_snapshot, values)
 
     async def test_failed_update_restores_previous_schedule(self) -> None:
         schedule = SCHEDULES[2]

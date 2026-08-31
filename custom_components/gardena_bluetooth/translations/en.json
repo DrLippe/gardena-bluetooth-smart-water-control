@@ -20,6 +20,58 @@
       }
     }
   },
+  "options": {
+    "abort": {
+      "entry_not_loaded": "The device must be loaded before its schedules can be edited.",
+      "schedules_not_supported": "This device does not support editable watering schedules."
+    },
+    "error": {
+      "cannot_read_schedule": "The schedule could not be read from the device.",
+      "cannot_update_schedule": "The schedule could not be saved to the device.",
+      "schedule_end_not_after_start": "The end time must be after the start time.",
+      "weekdays_required": "Select at least one weekday."
+    },
+    "step": {
+      "init": {
+        "title": "Watering schedules",
+        "menu_options": {
+          "schedule_1": "Edit schedule 1",
+          "schedule_2": "Edit schedule 2",
+          "schedule_3": "Edit schedule 3"
+        }
+      },
+      "schedule_1": {
+        "title": "Watering schedule 1",
+        "description": "Configure slot {slot}. Disabling it clears the schedule from the device.",
+        "data": {
+          "enabled": "Enabled",
+          "start_time": "Start time",
+          "end_time": "End time",
+          "weekdays": "Weekdays"
+        }
+      },
+      "schedule_2": {
+        "title": "Watering schedule 2",
+        "description": "Configure slot {slot}. Disabling it clears the schedule from the device.",
+        "data": {
+          "enabled": "Enabled",
+          "start_time": "Start time",
+          "end_time": "End time",
+          "weekdays": "Weekdays"
+        }
+      },
+      "schedule_3": {
+        "title": "Watering schedule 3",
+        "description": "Configure slot {slot}. Disabling it clears the schedule from the device.",
+        "data": {
+          "enabled": "Enabled",
+          "start_time": "Start time",
+          "end_time": "End time",
+          "weekdays": "Weekdays"
+        }
+      }
+    }
+  },
   "entity": {
     "binary_sensor": {
       "frost_warning": {
@@ -81,6 +133,9 @@
       },
       "seasonal_adjust": {
         "name": "Seasonal adjust"
+      },
+      "seasonal_reduction": {
+        "name": "Seasonal watering reduction"
       },
       "sensor_threshold": {
         "name": "Sensor threshold"

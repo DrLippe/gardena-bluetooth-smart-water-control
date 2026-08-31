@@ -43,8 +43,20 @@ home-assistant/discussions/3056).
    Gen-2 `98bdd...` blocks on demand for troubleshooting. Schedule masks are
    monitored every five minutes; full slot data is read only for active slots
    to keep BLE traffic and battery use low.
+10. **Seasonal reduction** — Adds a 0–100% slider for the G-1903x seasonal
+    watering reduction. The device stores the remaining runtime percentage,
+    so the integration transparently maps a reduction of 80% to device value
+    20.
+11. **Schedule editor** — Adds a graphical editor under the integration's
+    **Configure** button. Each of the three slots can be enabled, edited, or
+    cleared without using Developer Tools. The existing actions remain
+    available for automations.
 
 ## Watering schedule actions
+
+For interactive editing, open **Settings → Devices & services → Gardena
+Bluetooth → Configure**, choose a plan, then set its start time, end time and
+weekdays. Turning **Enabled** off safely clears that slot.
 
 Use **Developer Tools → Actions** or an automation to call
 `gardena_bluetooth.set_schedule`. Select the Gardena config entry, a slot from
