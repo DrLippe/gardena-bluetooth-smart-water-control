@@ -234,7 +234,7 @@ class ValveXCharacteristicTests(unittest.TestCase):
             schedule.start_offset: (6 * 3600).to_bytes(4, "little"),
             schedule.end_reference: b"\x00",
             schedule.end_offset: (6 * 3600 + 900).to_bytes(4, "little"),
-            schedule.repetition_type: b"\x02",
+            schedule.repetition_type: b"\x00",
             schedule.repetition_value: bytes.fromhex("7f000000"),
             schedule.actuator: b"\x00",
             schedule.pre_offset: b"\x00\x00",
@@ -242,6 +242,29 @@ class ValveXCharacteristicTests(unittest.TestCase):
         decoded = decode_schedule(schedule, raw)
         self.assertEqual(decoded.end_time, time(6, 15))
         self.assertEqual(decoded.duration_seconds, 900)
+        self.assertTrue(decoded.supported)
+
+    def test_schedule_written_by_gardena_android_app(self) -> None:
+        """Decode the known-good G-19033 schedule captured from Gardena's app."""
+        schedule = SCHEDULES[1]
+        raw = {
+            schedule.start_reference: bytes.fromhex("00"),
+            schedule.start_offset: bytes.fromhex("fc6c0000"),
+            schedule.end_reference: bytes.fromhex("04"),
+            schedule.end_offset: bytes.fromhex("58020000"),
+            schedule.repetition_type: bytes.fromhex("00"),
+            schedule.repetition_value: bytes.fromhex("55000000"),
+            schedule.actuator: bytes.fromhex("00"),
+            schedule.pre_offset: bytes.fromhex("0000"),
+        }
+        decoded = decode_schedule(schedule, raw)
+        self.assertEqual(decoded.start_time, time(7, 45))
+        self.assertEqual(decoded.end_time, time(7, 55))
+        self.assertEqual(decoded.duration_seconds, 600)
+        self.assertEqual(
+            decoded.weekdays,
+            ("monday", "wednesday", "friday", "sunday"),
+        )
         self.assertTrue(decoded.supported)
 
     def test_fixed_schedule_rejects_invalid_ranges(self) -> None:

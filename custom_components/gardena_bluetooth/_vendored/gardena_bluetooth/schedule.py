@@ -8,8 +8,9 @@ UUID_SUFFIX = "-0b0e-421a-84e5-ddbf75dc6de4"
 SCHEDULE_SLOT_COUNT = 3
 REFERENCE_MIDNIGHT = 0
 REFERENCE_DURATION = 4
-# Confirmed by reading a Home Assistant-created plan in Gardena's Android app.
-REPETITION_TYPE_WEEKDAYS = 2
+# Confirmed from a schedule written by Gardena's Android app. Value 2 can be
+# displayed by the app but is not evaluated by the G-1903x device scheduler.
+REPETITION_TYPE_WEEKDAYS = 0
 
 # Gardena's HWC weekday representation starts with Monday in bit 0.
 WEEKDAY_BITS = {
