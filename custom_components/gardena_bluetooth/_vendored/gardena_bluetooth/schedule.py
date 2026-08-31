@@ -8,20 +8,18 @@ UUID_SUFFIX = "-0b0e-421a-84e5-ddbf75dc6de4"
 SCHEDULE_SLOT_COUNT = 3
 REFERENCE_MIDNIGHT = 0
 REFERENCE_DURATION = 4
-# The public HWC client writes the weekday mask but has no repetition-type
-# setter. Empty/factory schedule instances use 0 for this field, so it must be
-# kept at 0 when enabling the weekly weekday bitmask.
-REPETITION_TYPE_WEEKDAYS = 0
+# Confirmed by reading a Home Assistant-created plan in Gardena's Android app.
+REPETITION_TYPE_WEEKDAYS = 2
 
-# Gardena's weekday representation starts with Sunday in bit 0.
+# Gardena's HWC weekday representation starts with Monday in bit 0.
 WEEKDAY_BITS = {
-    "sunday": 0x01,
-    "monday": 0x02,
-    "tuesday": 0x04,
-    "wednesday": 0x08,
-    "thursday": 0x10,
-    "friday": 0x20,
-    "saturday": 0x40,
+    "monday": 0x01,
+    "tuesday": 0x02,
+    "wednesday": 0x04,
+    "thursday": 0x08,
+    "friday": 0x10,
+    "saturday": 0x20,
+    "sunday": 0x40,
 }
 WEEKDAY_ORDER = (
     "monday",

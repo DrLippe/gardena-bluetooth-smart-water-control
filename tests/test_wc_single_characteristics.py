@@ -198,8 +198,8 @@ class ValveXCharacteristicTests(unittest.TestCase):
     def test_weekday_mask_round_trip(self) -> None:
         """Weekday names use Gardena's documented bit representation."""
         weekdays = ["monday", "wednesday", "friday"]
-        self.assertEqual(encode_weekdays(weekdays), 0x2A)
-        self.assertEqual(decode_weekdays(0x2A), tuple(weekdays))
+        self.assertEqual(encode_weekdays(weekdays), 0x15)
+        self.assertEqual(decode_weekdays(0x15), tuple(weekdays))
 
     def test_fixed_schedule_round_trip(self) -> None:
         """Fixed-time schedules encode field widths and values correctly."""
@@ -234,7 +234,7 @@ class ValveXCharacteristicTests(unittest.TestCase):
             schedule.start_offset: (6 * 3600).to_bytes(4, "little"),
             schedule.end_reference: b"\x00",
             schedule.end_offset: (6 * 3600 + 900).to_bytes(4, "little"),
-            schedule.repetition_type: b"\x00",
+            schedule.repetition_type: b"\x02",
             schedule.repetition_value: bytes.fromhex("7f000000"),
             schedule.actuator: b"\x00",
             schedule.pre_offset: b"\x00\x00",
@@ -275,11 +275,11 @@ class ScheduleTransactionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(client.writes[-1], (schedule.actuator, b"\x00"))
         self.assertEqual(
             client.writes[-2],
-            (schedule.repetition_value, bytes.fromhex("02000000")),
+            (schedule.repetition_value, bytes.fromhex("01000000")),
         )
         self.assertEqual(
             coordinator.cached_snapshot[schedule.repetition_value],
-            bytes.fromhex("02000000"),
+            bytes.fromhex("01000000"),
         )
 
     async def test_failed_update_restores_previous_schedule(self) -> None:
