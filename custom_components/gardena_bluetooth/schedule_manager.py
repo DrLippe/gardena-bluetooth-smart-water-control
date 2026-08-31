@@ -170,6 +170,12 @@ async def async_set_schedule(
                 schedule.repetition_value,
                 desired[schedule.repetition_value],
             )
+            # Gardena's HWC API explicitly assigns the actuator after the
+            # schedule fields. Even for valve 0, the same-value write is needed
+            # so the device commits/re-evaluates the configured schedule.
+            await _write_and_verify_locked(
+                coordinator, schedule.actuator, desired[schedule.actuator]
+            )
             snapshot = await _read_snapshot_locked(coordinator, schedule)
             for uuid, value in desired.items():
                 if snapshot[uuid] != value:

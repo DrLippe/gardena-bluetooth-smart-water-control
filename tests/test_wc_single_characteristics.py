@@ -258,7 +258,7 @@ class ValveXCharacteristicTests(unittest.TestCase):
 class ScheduleTransactionTests(unittest.IsolatedAsyncioTestCase):
     """Validate safety ordering and rollback of raw schedule writes."""
 
-    async def test_repetition_mask_is_written_last(self) -> None:
+    async def test_actuator_assignment_commits_enabled_schedule(self) -> None:
         schedule = SCHEDULES[2]
         client = FakeScheduleClient(_empty_schedule_values(3))
         coordinator = FakeScheduleCoordinator(client)
@@ -272,8 +272,10 @@ class ScheduleTransactionTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(client.writes[0], (schedule.repetition_value, bytes(4)))
+        self.assertEqual(client.writes[-1], (schedule.actuator, b"\x00"))
         self.assertEqual(
-            client.writes[-1], (schedule.repetition_value, bytes.fromhex("02000000"))
+            client.writes[-2],
+            (schedule.repetition_value, bytes.fromhex("02000000")),
         )
         self.assertEqual(
             coordinator.cached_snapshot[schedule.repetition_value],

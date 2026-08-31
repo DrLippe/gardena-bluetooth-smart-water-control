@@ -241,4 +241,5 @@ def encode_fixed_schedule(
         ),
         schedule.repetition_type: REPETITION_TYPE_WEEKDAYS.to_bytes(1, "little"),
         schedule.repetition_value: encode_weekdays(weekdays).to_bytes(4, "little"),
+        schedule.actuator: bytes(1),
     }
