@@ -1,4 +1,25 @@
 {
+  "config": {
+    "abort": {
+      "already_configured": "Das Gerät ist bereits konfiguriert.",
+      "cannot_connect": "Die Verbindung konnte nicht hergestellt werden.",
+      "no_devices_found": "Keine Geräte gefunden."
+    },
+    "error": {
+      "cannot_connect": "Die Verbindung konnte nicht hergestellt werden. {error}"
+    },
+    "step": {
+      "confirm": {
+        "description": "Wollen Sie dieses Bluetooth-Gerät einrichten?"
+      },
+      "user": {
+        "data": {
+          "address": "Gerät"
+        },
+        "description": "Welches Gerät soll eingerichtet werden?"
+      }
+    }
+  },
   "options": {
     "abort": {
       "entry_not_loaded": "Das Gerät muss geladen sein, bevor seine Bewässerungspläne bearbeitet werden können.",
@@ -52,7 +73,27 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "frost_warning": {
+        "name": "Frost"
+      },
+      "sensor_connected_state": {
+        "name": "Sensor Verbindung"
+      },
+      "valve_connected_state": {
+        "name": "Ventil Verbindung"
+      },
+      "valve_available_valve_1": {
+        "name": "Ventil 1 verfügbar"
+      },
+      "valve_available_valve_2": {
+        "name": "Ventil 2 verfügbar"
+      }
+    },
     "button": {
+      "factory_reset": {
+        "name": "Werkseinstellungen"
+      },
       "reset_error_valve_1": {
         "name": "Ventilfehler 1 zurücksetzen"
       },
@@ -74,6 +115,15 @@
       }
     },
     "sensor": {
+      "activation_reason": {
+        "name": "Aktivierungsgrund"
+      },
+      "activation_reason_valve_1": {
+        "name": "Aktivierungsgrund Ventil 1"
+      },
+      "activation_reason_valve_2": {
+        "name": "Aktivierungsgrund Ventil 2"
+      },
       "error_code_valve_1": {
         "name": "Fehlercode Ventil 1"
       },
@@ -102,6 +152,25 @@
       },
       "ptu_mode_raw": {
         "name": "Wassersystemmodus Rohwert"
+      }
+    },
+    "switch": {
+      "state": {
+        "name": "Offen"
+      },
+      "state_valve_1": {
+        "name": "Ventil 1"
+      },
+      "state_valve_2": {
+        "name": "Ventil 2"
+      }
+    },
+    "valve": {
+      "valve_1": {
+        "name": "Ventil 1"
+      },
+      "valve_2": {
+        "name": "Ventil 2"
       }
     },
     "text": {
