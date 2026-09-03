@@ -27,11 +27,13 @@ from homeassistant.components.number import (
 )
 from homeassistant.const import DEGREE, PERCENTAGE, EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import GardenaBluetoothConfigEntry, GardenaBluetoothCoordinator
 from .entity import GardenaBluetoothDescriptorEntity, GardenaBluetoothEntity
 from .seasonal import reduction_from_runtime, runtime_from_reduction
+from .watering import manual_seconds_from_minutes
 
 
 @dataclass(frozen=True)
@@ -43,6 +45,7 @@ class GardenaBluetoothNumberEntityDescription(NumberEntityDescription):
     )
     connected_state: Characteristic | None = None
     scale: float = 1.0
+    integer_minutes: bool = False
 
     @property
     def context(self) -> set[str]:
@@ -83,26 +86,30 @@ DESCRIPTIONS = (
     GardenaBluetoothNumberEntityDescription(
         key=Valve1.manual_watering_duration.unique_id,
         translation_key="manual_watering_duration_valve_1",
-        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         mode=NumberMode.BOX,
-        native_min_value=0.0,
-        native_max_value=24 * 60 * 60,
-        native_step=60,
+        native_min_value=1.0,
+        native_max_value=90.0,
+        native_step=1.0,
         entity_category=EntityCategory.CONFIG,
         char=Valve1.manual_watering_duration,
         device_class=NumberDeviceClass.DURATION,
+        scale=60.0,
+        integer_minutes=True,
     ),
     GardenaBluetoothNumberEntityDescription(
         key=Valve2.manual_watering_duration.unique_id,
         translation_key="manual_watering_duration_valve_2",
-        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         mode=NumberMode.BOX,
-        native_min_value=0.0,
-        native_max_value=24 * 60 * 60,
-        native_step=60,
+        native_min_value=1.0,
+        native_max_value=90.0,
+        native_step=1.0,
         entity_category=EntityCategory.CONFIG,
         char=Valve2.manual_watering_duration,
         device_class=NumberDeviceClass.DURATION,
+        scale=60.0,
+        integer_minutes=True,
     ),
     GardenaBluetoothNumberEntityDescription(
         key=Valve.remaining_open_time.unique_id,
@@ -220,8 +227,15 @@ class GardenaBluetoothNumber(GardenaBluetoothDescriptorEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""
+        if self.entity_description.integer_minutes:
+            try:
+                raw_value = manual_seconds_from_minutes(value)
+            except ValueError as exception:
+                raise HomeAssistantError(str(exception)) from exception
+        else:
+            raw_value = int(value * self.entity_description.scale)
         await self.coordinator.write(
-            self.entity_description.char, int(value * self.entity_description.scale)
+            self.entity_description.char, raw_value
         )
         self.async_write_ha_state()
 

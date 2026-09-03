@@ -26,8 +26,10 @@ home-assistant/discussions/3056).
 5. **Valve diagnostics** — Exposes the Valve1/Valve2 error code, a
    configurable `paused until` timestamp, and a button that resets the
    actuator error using the parameterless LWM2M Execute command.
-6. **Valve names** — Exposes the Gen-2 actuator name as a writable text
-   entity (`98bda005` for valve 1 and `98bda105` for valve 2).
+6. **Valve settings** — Exposes the Gen-2 actuator name as a writable text
+   entity (`98bda005` for valve 1 and `98bda105` for valve 2) and in the
+   integration's Configure flow. Manual watering duration is presented as
+   whole minutes from 1 to 90 and converted to device seconds when written.
 7. **Device clock** — Synchronizes the G-1903x Unix clock (`98bd0101`) when
    Home Assistant connects and exposes it as diagnostic device time. Gardena's
    Android library confirms the value is a 32-bit little-endian Unix timestamp;
@@ -51,6 +53,9 @@ home-assistant/discussions/3056).
     **Configure** button. Each of the three slots can be enabled, edited, or
     cleared without using Developer Tools. The existing actions remain
     available for automations.
+12. **Device identity** — Reads the serial number from Gardena manufacturer
+    data (TLV field 4) and displays it next to the firmware version in Home
+    Assistant's device information.
 
 ## Watering schedule actions
 

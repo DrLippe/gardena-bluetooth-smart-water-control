@@ -22,22 +22,37 @@
   },
   "options": {
     "abort": {
-      "entry_not_loaded": "Das Gerät muss geladen sein, bevor seine Bewässerungspläne bearbeitet werden können.",
-      "schedules_not_supported": "Dieses Gerät unterstützt keine bearbeitbaren Bewässerungspläne."
+      "entry_not_loaded": "Das Gerät muss geladen sein, bevor seine Einstellungen bearbeitet werden können.",
+      "schedules_not_supported": "Dieses Gerät stellt keine bearbeitbaren Einstellungen bereit."
     },
     "error": {
       "cannot_read_schedule": "Der Bewässerungsplan konnte nicht vom Gerät gelesen werden.",
       "cannot_update_schedule": "Der Bewässerungsplan konnte nicht auf dem Gerät gespeichert werden.",
+      "cannot_read_valve_settings": "Die Ventileinstellungen konnten nicht vom Gerät gelesen werden.",
+      "cannot_update_valve_settings": "Die Ventileinstellungen konnten nicht auf dem Gerät gespeichert werden.",
+      "manual_watering_minutes_invalid": "Gib eine ganze Zahl von 1 bis 90 ein.",
       "schedule_end_not_after_start": "Die Endzeit muss nach der Startzeit liegen.",
       "weekdays_required": "Wähle mindestens einen Wochentag aus."
     },
     "step": {
       "init": {
-        "title": "Bewässerungspläne",
+        "title": "Gardena-Geräteeinstellungen",
         "menu_options": {
+          "valve_settings": "Ventileinstellungen bearbeiten",
           "schedule_1": "Plan 1 bearbeiten",
           "schedule_2": "Plan 2 bearbeiten",
           "schedule_3": "Plan 3 bearbeiten"
+        }
+      },
+      "valve_settings": {
+        "title": "Ventileinstellungen",
+        "description": "Die Dauer wird in ganzen Minuten angezeigt und in Sekunden an das Gerät übertragen.",
+        "data": {
+          "valve_name": "Ventilname",
+          "manual_watering_minutes": "Manuelle Bewässerungsdauer"
+        },
+        "data_description": {
+          "manual_watering_minutes": "Ganze Minuten von 1 bis 90."
         }
       },
       "schedule_1": {

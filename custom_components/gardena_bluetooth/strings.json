@@ -22,22 +22,37 @@
   },
   "options": {
     "abort": {
-      "entry_not_loaded": "The device must be loaded before its schedules can be edited.",
-      "schedules_not_supported": "This device does not support editable watering schedules."
+      "entry_not_loaded": "The device must be loaded before its settings can be edited.",
+      "schedules_not_supported": "This device does not expose editable settings."
     },
     "error": {
       "cannot_read_schedule": "The schedule could not be read from the device.",
       "cannot_update_schedule": "The schedule could not be saved to the device.",
+      "cannot_read_valve_settings": "The valve settings could not be read from the device.",
+      "cannot_update_valve_settings": "The valve settings could not be saved to the device.",
+      "manual_watering_minutes_invalid": "Enter a whole number from 1 through 90.",
       "schedule_end_not_after_start": "The end time must be after the start time.",
       "weekdays_required": "Select at least one weekday."
     },
     "step": {
       "init": {
-        "title": "Watering schedules",
+        "title": "Gardena device settings",
         "menu_options": {
+          "valve_settings": "Edit valve settings",
           "schedule_1": "Edit schedule 1",
           "schedule_2": "Edit schedule 2",
           "schedule_3": "Edit schedule 3"
+        }
+      },
+      "valve_settings": {
+        "title": "Valve settings",
+        "description": "The duration is shown in whole minutes and sent to the device in seconds.",
+        "data": {
+          "valve_name": "Valve name",
+          "manual_watering_minutes": "Manual watering duration"
+        },
+        "data_description": {
+          "manual_watering_minutes": "Whole minutes from 1 through 90."
         }
       },
       "schedule_1": {

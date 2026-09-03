@@ -40,7 +40,7 @@ from gardena_bluetooth.const import (  # noqa: E402
     Valve1,
     Valve2,
 )
-from gardena_bluetooth.parse import ProductType, Service  # noqa: E402
+from gardena_bluetooth.parse import ManufacturerData, ProductType, Service  # noqa: E402
 from gardena_bluetooth.schedule import (  # noqa: E402
     SCHEDULES,
     decode_schedule,
@@ -97,6 +97,25 @@ def _load_seasonal_helpers():
 
 
 SEASONAL = _load_seasonal_helpers()
+
+
+def _load_watering_helpers():
+    """Load pure watering-duration helpers without Home Assistant."""
+    path = (
+        Path(__file__).parents[1]
+        / "custom_components"
+        / "gardena_bluetooth"
+        / "watering.py"
+    )
+    spec = importlib.util.spec_from_file_location("watering_test", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load watering helpers")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+WATERING = _load_watering_helpers()
 
 
 class FakeScheduleClient:
@@ -167,6 +186,21 @@ class ValveXCharacteristicTests(unittest.TestCase):
         """Actuator names preserve UTF-8 characters."""
         value = "Garten Süd"
         self.assertEqual(Valve1.name.decode(Valve1.name.encode(value)), value)
+
+    def test_manual_duration_minutes_are_sent_as_seconds(self) -> None:
+        """The 1-90 minute UI writes the uint32 duration in seconds."""
+        self.assertEqual(WATERING.manual_seconds_from_minutes(1), 60)
+        self.assertEqual(WATERING.manual_seconds_from_minutes(90), 5400)
+        self.assertEqual(WATERING.manual_minutes_from_seconds(300), 5)
+        with self.assertRaises(ValueError):
+            WATERING.manual_seconds_from_minutes(1.5)
+        with self.assertRaises(ValueError):
+            WATERING.manual_seconds_from_minutes(91)
+
+    def test_manufacturer_data_contains_device_serial_number(self) -> None:
+        """Gardena TLV field 4 exposes serial 39368 as little endian."""
+        data = ManufacturerData.decode(bytes.fromhex("0304c899"))
+        self.assertEqual(data.serial, 39368)
 
     def test_pause_timestamp_round_trip(self) -> None:
         """Pause timestamps use the eight-byte Gen-2 BLE encoding."""

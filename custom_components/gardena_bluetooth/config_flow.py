@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from gardena_bluetooth.client import Client
-from gardena_bluetooth.const import PRODUCT_NAMES, DeviceInformation
+from gardena_bluetooth.const import PRODUCT_NAMES, DeviceInformation, Valve1
 from gardena_bluetooth.exceptions import CharacteristicNotFound, CommunicationFailure
 from gardena_bluetooth.parse import ManufacturerData, ProductType
 from gardena_bluetooth.schedule import SCHEDULES, WEEKDAY_ORDER
@@ -31,6 +31,9 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -38,11 +41,17 @@ from homeassistant.helpers.selector import (
 )
 
 from . import get_connection
-from .const import CONF_PRODUCT_TYPE, DOMAIN
+from .const import CONF_PRODUCT_TYPE, CONF_SERIAL_NUMBER, DOMAIN
 from .schedule_manager import (
     async_clear_schedule,
     async_read_schedule,
     async_set_schedule,
+)
+from .watering import (
+    MAX_MANUAL_WATERING_MINUTES,
+    MIN_MANUAL_WATERING_MINUTES,
+    manual_minutes_from_seconds,
+    manual_seconds_from_minutes,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,6 +69,10 @@ CONF_ENABLED = "enabled"
 CONF_START_TIME = "start_time"
 CONF_END_TIME = "end_time"
 CONF_WEEKDAYS = "weekdays"
+CONF_VALVE_NAME = "valve_name"
+CONF_MANUAL_WATERING_MINUTES = "manual_watering_minutes"
+
+_MANUFACTURER_IDENTITY_FIELDS = {"group", "model", "variant", "serial"}
 
 
 def _is_supported(discovery_info: BluetoothServiceInfo):
@@ -86,6 +99,7 @@ class GardenaBluetoothConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self.devices: dict[str, str] = {}
         self.product_types: dict[str, str] = {}
+        self.serial_numbers: dict[str, int] = {}
         self.address: str | None
 
     @staticmethod
@@ -117,6 +131,8 @@ class GardenaBluetoothConfigFlow(ConfigFlow, domain=DOMAIN):
         # cannot be relied on after a restart.
         if product_type := self.product_types.get(self.address):
             data[CONF_PRODUCT_TYPE] = product_type
+        if serial_number := self.serial_numbers.get(self.address):
+            data[CONF_SERIAL_NUMBER] = serial_number
         return data
 
     async def async_step_bluetooth(
@@ -124,7 +140,9 @@ class GardenaBluetoothConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle the bluetooth discovery step."""
         _LOGGER.debug("Discovered device: %s", discovery_info)
-        data = await async_get_manufacturer_data({discovery_info.address})
+        data = await async_get_manufacturer_data(
+            {discovery_info.address}, fields=_MANUFACTURER_IDENTITY_FIELDS
+        )
         product_type = data[discovery_info.address].product_type
         if product_type not in _SUPPORTED_PRODUCT_TYPES:
             return self.async_abort(reason="no_devices_found")
@@ -132,6 +150,8 @@ class GardenaBluetoothConfigFlow(ConfigFlow, domain=DOMAIN):
         self.address = discovery_info.address
         self.devices = {discovery_info.address: PRODUCT_NAMES[product_type]}
         self.product_types[discovery_info.address] = product_type.name
+        if serial_number := data[discovery_info.address].serial:
+            self.serial_numbers[discovery_info.address] = serial_number
         await self.async_set_unique_id(self.address)
         self._abort_if_unique_id_configured()
         return await self.async_step_confirm()
@@ -175,12 +195,16 @@ class GardenaBluetoothConfigFlow(ConfigFlow, domain=DOMAIN):
                 continue
             candidates.add(address)
 
-        data = await async_get_manufacturer_data(candidates)
+        data = await async_get_manufacturer_data(
+            candidates, fields=_MANUFACTURER_IDENTITY_FIELDS
+        )
         for address, mfg_data in data.items():
             if mfg_data.product_type not in _SUPPORTED_PRODUCT_TYPES:
                 continue
             self.devices[address] = PRODUCT_NAMES[mfg_data.product_type]
             self.product_types[address] = mfg_data.product_type.name
+            if serial_number := mfg_data.serial:
+                self.serial_numbers[address] = serial_number
 
         # Keep selection sorted by address to ensure stable tests
         self.devices = dict(sorted(self.devices.items(), key=lambda x: x[0]))
@@ -212,6 +236,14 @@ class GardenaBluetoothOptionsFlow(OptionsFlow):
             self.config_entry.runtime_data.raw_characteristics
         )
 
+    def _valve_settings_are_supported(self) -> bool:
+        """Return whether valve name and manual duration can be configured."""
+        characteristics = self.config_entry.runtime_data.characteristics
+        return {
+            Valve1.name.unique_id,
+            Valve1.manual_watering_duration.unique_id,
+        }.issubset(characteristics)
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -221,15 +253,105 @@ class GardenaBluetoothOptionsFlow(OptionsFlow):
             _ = self.config_entry.runtime_data
         except RuntimeError:
             return self.async_abort(reason="entry_not_loaded")
-        if not any(self._schedule_is_supported(slot) for slot in range(1, 4)):
+        menu_options = []
+        if self._valve_settings_are_supported():
+            menu_options.append("valve_settings")
+        menu_options.extend(
+            f"schedule_{slot}"
+            for slot in range(1, 4)
+            if self._schedule_is_supported(slot)
+        )
+        if not menu_options:
             return self.async_abort(reason="schedules_not_supported")
         return self.async_show_menu(
             step_id="init",
-            menu_options=[
-                f"schedule_{slot}"
-                for slot in range(1, 4)
-                if self._schedule_is_supported(slot)
-            ],
+            menu_options=menu_options,
+        )
+
+    async def _async_read_valve_settings(self) -> dict[str, Any]:
+        """Read valve settings directly so the form never shows stale values."""
+        coordinator = self.config_entry.runtime_data
+        async with coordinator.operation_lock:
+            name = await coordinator.client.read_char(Valve1.name)
+            duration_seconds = await coordinator.client.read_char(
+                Valve1.manual_watering_duration
+            )
+        return {
+            CONF_VALVE_NAME: name,
+            CONF_MANUAL_WATERING_MINUTES: manual_minutes_from_seconds(
+                duration_seconds
+            ),
+        }
+
+    def _valve_settings_schema(self, defaults: dict[str, Any]) -> vol.Schema:
+        """Return the valve settings schema."""
+        return vol.Schema(
+            {
+                vol.Required(
+                    CONF_VALVE_NAME, default=defaults[CONF_VALVE_NAME]
+                ): vol.All(str, vol.Length(min=1, max=20)),
+                vol.Required(
+                    CONF_MANUAL_WATERING_MINUTES,
+                    default=defaults[CONF_MANUAL_WATERING_MINUTES],
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_MANUAL_WATERING_MINUTES,
+                        max=MAX_MANUAL_WATERING_MINUTES,
+                        step=1,
+                        mode=NumberSelectorMode.BOX,
+                        unit_of_measurement="min",
+                    )
+                ),
+            }
+        )
+
+    async def async_step_valve_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit the valve name and default manual watering duration."""
+        errors: dict[str, str] = {}
+        try:
+            defaults = await self._async_read_valve_settings()
+        except (CharacteristicNotFound, CommunicationFailure, HomeAssistantError):
+            _LOGGER.exception("Unable to read valve settings")
+            defaults = {
+                CONF_VALVE_NAME: "Ventil 1",
+                CONF_MANUAL_WATERING_MINUTES: 30,
+            }
+            if user_input is None:
+                errors["base"] = "cannot_read_valve_settings"
+
+        if user_input is not None:
+            try:
+                duration_seconds = manual_seconds_from_minutes(
+                    user_input[CONF_MANUAL_WATERING_MINUTES]
+                )
+            except ValueError:
+                errors[CONF_MANUAL_WATERING_MINUTES] = (
+                    "manual_watering_minutes_invalid"
+                )
+            else:
+                try:
+                    await self.config_entry.runtime_data.write(
+                        Valve1.name, user_input[CONF_VALVE_NAME]
+                    )
+                    await self.config_entry.runtime_data.write(
+                        Valve1.manual_watering_duration, duration_seconds
+                    )
+                except HomeAssistantError:
+                    _LOGGER.exception("Unable to update valve settings")
+                    errors["base"] = "cannot_update_valve_settings"
+
+            if not errors:
+                return self.async_create_entry(
+                    title="", data=dict(self.config_entry.options)
+                )
+            defaults = user_input
+
+        return self.async_show_form(
+            step_id="valve_settings",
+            data_schema=self._valve_settings_schema(defaults),
+            errors=errors,
         )
 
     async def _async_get_defaults(self, slot: int) -> dict[str, Any]:

@@ -46,7 +46,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_PRODUCT_TYPE, DOMAIN
+from .const import CONF_PRODUCT_TYPE, CONF_SERIAL_NUMBER, DOMAIN
 from .coordinator import (
     DeviceUnavailable,
     GardenaBluetoothConfigEntry,
@@ -123,6 +123,7 @@ async def async_setup_entry(
     # can never succeed after a restart. Fall back to scanning only for
     # entries created before CONF_PRODUCT_TYPE existed, and migrate them.
     product_type = ProductType.UNKNOWN
+    serial_number = entry.data.get(CONF_SERIAL_NUMBER)
     if stored := entry.data.get(CONF_PRODUCT_TYPE):
         try:
             product_type = ProductType[stored]
@@ -131,7 +132,9 @@ async def async_setup_entry(
 
     if product_type == ProductType.UNKNOWN:
         try:
-            mfg_data = await async_get_manufacturer_data({address})
+            mfg_data = await async_get_manufacturer_data(
+                {address}, fields={"group", "model", "variant", "serial"}
+            )
         except TimeoutError as exception:
             # Device not advertising (asleep / out of range) - let HA retry
             # with backoff instead of failing the entry permanently.
@@ -139,12 +142,39 @@ async def async_setup_entry(
                 f"Device {address} not found during scan"
             ) from exception
         product_type = mfg_data[address].product_type
+        serial_number = mfg_data[address].serial
         if product_type == ProductType.UNKNOWN:
             raise ConfigEntryNotReady("Unable to find product type")
         # One-time migration: persist so the next restart needs no scan.
         hass.config_entries.async_update_entry(
-            entry, data={**entry.data, CONF_PRODUCT_TYPE: product_type.name}
+            entry,
+            data={
+                **entry.data,
+                CONF_PRODUCT_TYPE: product_type.name,
+                **(
+                    {CONF_SERIAL_NUMBER: serial_number}
+                    if serial_number is not None
+                    else {}
+                ),
+            },
         )
+
+    # Entries created before serial-number persistence can migrate without a
+    # factory reset. The number is field 4 in Gardena's manufacturer-data TLV.
+    if serial_number is None:
+        try:
+            serial_data = await async_get_manufacturer_data(
+                {address}, fields={"serial"}, timeout=5.0
+            )
+        except TimeoutError:
+            LOGGER.debug("Serial number was not present in advertisements")
+        else:
+            serial_number = serial_data[address].serial
+            if serial_number is not None:
+                hass.config_entries.async_update_entry(
+                    entry,
+                    data={**entry.data, CONF_SERIAL_NUMBER: serial_number},
+                )
 
     client = Client(get_connection(hass, address), product_type)
     try:
@@ -154,6 +184,11 @@ async def async_setup_entry(
         sw_version = await client.read_char(DeviceInformation.firmware_version, None)
         manufacturer = await client.read_char(DeviceInformation.manufacturer_name, None)
         model = await client.read_char(DeviceInformation.model_number, None)
+        # Prefer the standard characteristic when a model exposes it, then
+        # fall back to the manufacturer-data serial used by G-19033/G-19034.
+        serial_number = await client.read_char(
+            DeviceInformation.serial_number, serial_number
+        )
 
         name = entry.title
         name = await client.read_char(DeviceConfiguration.custom_device_name, name)
@@ -179,6 +214,7 @@ async def async_setup_entry(
         sw_version=sw_version,
         manufacturer=manufacturer,
         model=model,
+        serial_number=str(serial_number) if serial_number is not None else None,
     )
 
     coordinator = GardenaBluetoothCoordinator(
